@@ -208,4 +208,82 @@ impl Member {
 
         Ok(())
     }
+
+    // Gets all members whose birthday is today (same day and month, regardless of year)
+    pub async fn get_today_members(
+        pool: &Pool<Sqlite>,
+        today: NaiveDate,
+    ) -> Result<Vec<Member>, sqlx::Error> {
+        use chrono::Datelike;
+
+        let today_day = today.day();
+        let today_month = today.month();
+
+        let rows = sqlx::query(
+            "SELECT 
+                id, 
+                name,
+                surname,
+                second_surname,
+                birthdate,
+                phone,
+                country_id,
+                gender_id,
+                notes,
+                created_at, 
+                updated_at
+            FROM members 
+            WHERE birthdate IS NOT NULL
+                AND CAST(strftime('%d', birthdate) AS INTEGER) = $1
+                AND CAST(strftime('%m', birthdate) AS INTEGER) = $2
+            ORDER BY name ASC",
+        )
+        .bind(today_day as i32)
+        .bind(today_month as i32)
+        .fetch_all(pool)
+        .await?;
+
+        let mut result = Vec::<Member>::new();
+
+        for row in rows {
+            let id: Option<i32> = row.try_get("id")?;
+            let name: String = row.try_get("name")?;
+            let surname: String = row.try_get("surname")?;
+            let second_surname: String = row.try_get("second_surname")?;
+            let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
+            let phone: String = row.try_get("phone")?;
+            let country_id: i32 = row.try_get("country_id")?;
+            let gender_id: i32 = row.try_get("gender_id")?;
+            let notes: String = row.try_get("notes")?;
+            let created_at: Option<NaiveDateTime> = row.try_get("created_at")?;
+            let updated_at: Option<NaiveDateTime> = row.try_get("updated_at")?;
+
+            let country = Country::from_id(country_id).unwrap_or_default();
+            let gender = Gender::from_id(gender_id).unwrap_or_default();
+
+            // Get interests for this member
+            let interests = Interest::get_member_interests(pool, id.unwrap_or(0)).await?;
+
+            // Get cupons for this member
+            let cupons = Cupon::get_member_cupons(pool, id.unwrap_or(0)).await?;
+
+            let member = Member {
+                id,
+                name,
+                surname,
+                second_surname,
+                birthdate,
+                phone,
+                country,
+                gender,
+                notes,
+                created_at,
+                updated_at,
+                interests,
+                cupons,
+            };
+            result.push(member);
+        }
+        Ok(result)
+    }
 }

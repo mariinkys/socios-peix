@@ -5,7 +5,10 @@ use leptos_router::{
     StaticSegment, WildcardSegment,
 };
 
-use crate::pages::home::HomePage;
+use crate::{
+    components::{navbar::NavbarComponent, toast::ToastComponent},
+    pages::home::HomePage,
+};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -20,9 +23,12 @@ pub fn App() -> impl IntoView {
         // sets the document title
         <Title text="Socios Peix"/>
 
+        <ToastComponent/>
+        <NavbarComponent/>
+
         // content for this welcome page
         <Router>
-            <main>
+            <main class="p-3">
                 <Routes fallback=move || "Not found.">
                     <Route path=StaticSegment("") view=HomePage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
