@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
-    StaticSegment, WildcardSegment,
+    path, WildcardSegment,
 };
 
 use crate::{
@@ -33,9 +33,9 @@ pub fn App() -> impl IntoView {
         <Router>
             <main class="p-3">
                 <Routes fallback=move || "Not found.">
-                    <Route path=StaticSegment("") view=HomePage/>
-                    <Route path=StaticSegment("/members") view=MembersPage/>
-                    <Route path=StaticSegment("/members/new") view=UpsertMemberPage/>
+                    <Route path=path!("") view=HomePage/>
+                    <Route path=path!("/members") view=MembersPage/>
+                    <Route path=path!("/members/:id") view=UpsertMemberPage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
                 </Routes>
             </main>

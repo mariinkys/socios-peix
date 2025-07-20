@@ -20,7 +20,7 @@ pub fn MembersList() -> impl IntoView {
                             >
                                 "Recargar"
                             </button>
-                            <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
+                            <a class="btn btn-primary" href="/members/0">"Añadir Socio"</a>
                         </div>
                         <Show
                             when=move || { members.get().is_some_and(|x| x.is_ok_and(|y| !y.is_empty()))}
