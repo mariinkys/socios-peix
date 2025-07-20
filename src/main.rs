@@ -1,3 +1,7 @@
+pub mod components;
+pub mod core;
+pub mod pages;
+
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -7,10 +11,15 @@ async fn main() -> std::io::Result<()> {
     use leptos::prelude::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_meta::MetaTags;
-    use socios_peix::app::*;
+    use socios_peix::{app::*, core::database::init_database};
 
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
+
+    // Database
+    // Ej: export DATABASE_URL="sqlite:socios.db"
+    let database_url = std::env::var("DATABASE_URL").expect("database URL must be set");
+    let pool = init_database(&database_url).await.unwrap();
 
     println!("listening on http://{}", &addr);
 
@@ -21,6 +30,8 @@ async fn main() -> std::io::Result<()> {
         let site_root = leptos_options.site_root.clone().to_string();
 
         App::new()
+            // database
+            .app_data(web::Data::new(pool.clone()))
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
             // serve other assets from the `assets` directory

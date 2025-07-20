@@ -1,0 +1,211 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
+use crate::core::{
+    entities::{country::Country, gender::Gender},
+    models::{cupon::Cupon, interest::Interest},
+};
+use chrono::{NaiveDate, NaiveDateTime};
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "ssr")]
+use sqlx::{Pool, Row, Sqlite};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Member {
+    pub id: Option<i32>,
+    pub name: String,
+    pub surname: String,
+    pub second_surname: String,
+    pub birthdate: Option<NaiveDate>,
+    pub phone: String,
+    pub country: Country, // Country is a local_model, not a database table.
+    pub gender: Gender,   // Gender us a local_model, not a database table.
+    pub notes: String,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
+
+    // Not in the database, helps us JOIN other tables and return a complete model.
+    pub interests: Vec<Interest>,
+    pub cupons: Vec<Cupon>,
+}
+
+impl std::fmt::Display for Member {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl Member {
+    /// Returns true if the entity is valid (ready for submission to the db)
+    pub fn is_valid(&self) -> bool {
+        if self.name.is_empty() {
+            return false;
+        }
+
+        true
+    }
+
+    pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Member>, sqlx::Error> {
+        let rows = sqlx::query(
+            "SELECT 
+                id, 
+                name,
+                surname,
+                second_surname,
+                birthdate,
+                phone,
+                country_id,
+                gender_id,
+                notes,
+                created_at, 
+                updated_at
+            FROM members 
+            ORDER BY id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        let mut result = Vec::<Member>::new();
+
+        for row in rows {
+            let id: Option<i32> = row.try_get("id")?;
+            let name: String = row.try_get("name")?;
+            let surname: String = row.try_get("surname")?;
+            let second_surname: String = row.try_get("second_surname")?;
+            let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
+            let phone: String = row.try_get("phone")?;
+            let country_id: i32 = row.try_get("country_id")?;
+            let gender_id: i32 = row.try_get("gender_id")?;
+            let notes: String = row.try_get("notes")?;
+            let created_at: Option<NaiveDateTime> = row.try_get("created_at")?;
+            let updated_at: Option<NaiveDateTime> = row.try_get("updated_at")?;
+
+            let country = Country::from_id(country_id).unwrap_or_default();
+            let gender = Gender::from_id(gender_id).unwrap_or_default();
+
+            // Get interests for this member
+            let interests = Interest::get_member_interests(pool, id.unwrap_or(0)).await?;
+
+            // Get cupons for this member
+            let cupons = Cupon::get_member_cupons(pool, id.unwrap_or(0)).await?;
+
+            let member = Member {
+                id,
+                name,
+                surname,
+                second_surname,
+                birthdate,
+                phone,
+                country,
+                gender,
+                notes,
+                created_at,
+                updated_at,
+                interests,
+                cupons,
+            };
+            result.push(member);
+        }
+        Ok(result)
+    }
+
+    pub async fn get_single(pool: &Pool<Sqlite>, member_id: i32) -> Result<Member, sqlx::Error> {
+        let row = sqlx::query(
+            "SELECT 
+                id, 
+                name,
+                surname,
+                second_surname,
+                birthdate,
+                phone,
+                country_id,
+                gender_id,
+                notes,
+                created_at, 
+                updated_at
+            FROM members 
+            WHERE id = $1",
+        )
+        .bind(member_id)
+        .fetch_one(pool)
+        .await?;
+
+        let id: Option<i32> = row.try_get("id")?;
+        let name: String = row.try_get("name")?;
+        let surname: String = row.try_get("surname")?;
+        let second_surname: String = row.try_get("second_surname")?;
+        let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
+        let phone: String = row.try_get("phone")?;
+        let country_id: i32 = row.try_get("country_id")?;
+        let gender_id: i32 = row.try_get("gender_id")?;
+        let notes: String = row.try_get("notes")?;
+        let created_at: Option<NaiveDateTime> = row.try_get("created_at")?;
+        let updated_at: Option<NaiveDateTime> = row.try_get("updated_at")?;
+
+        let country = Country::from_id(country_id).unwrap_or_default();
+        let gender = Gender::from_id(gender_id).unwrap_or_default();
+
+        let interests = Interest::get_member_interests(pool, member_id).await?;
+        let cupons = Cupon::get_member_cupons(pool, member_id).await?;
+
+        let member = Member {
+            id,
+            name,
+            surname,
+            second_surname,
+            birthdate,
+            phone,
+            country,
+            gender,
+            notes,
+            created_at,
+            updated_at,
+            interests,
+            cupons,
+        };
+
+        Ok(member)
+    }
+
+    pub async fn add(pool: &Pool<Sqlite>, member: Member) -> Result<(), sqlx::Error> {
+        sqlx::query("INSERT INTO members (name, surname, second_surname, birthdate, phone, country_id, gender_id, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)")
+            .bind(member.name)
+            .bind(member.surname)
+            .bind(member.second_surname)
+            .bind(member.birthdate)
+            .bind(member.phone)
+            .bind(member.country.to_id())
+            .bind(member.gender.to_id())
+            .bind(member.notes)
+            .execute(pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn edit(pool: &Pool<Sqlite>, member: Member) -> Result<(), sqlx::Error> {
+        sqlx::query("UPDATE members SET name = $1, surname = $2, second_surname = $3, birthdate = $4, phone = $5, country_id = $6, gender_id = $7, notes = $8, updated_at = CURRENT_TIMESTAMP WHERE id = $9")
+            .bind(member.name)
+            .bind(member.surname)
+            .bind(member.second_surname)
+            .bind(member.birthdate)
+            .bind(member.phone)
+            .bind(member.country.to_id())
+            .bind(member.gender.to_id())
+            .bind(member.notes)
+            .bind(member.id)
+            .execute(pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete(pool: &Pool<Sqlite>, id: i32) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM members WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
+
+        Ok(())
+    }
+}

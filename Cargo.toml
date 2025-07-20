@@ -17,6 +17,19 @@ leptos_actix = { version = "0.8.3", optional = true }
 leptos_router = { version = "0.8.3", features = ["nightly"] }
 wasm-bindgen = "=0.2.100"
 
+# Added by me
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio",
+  "sqlite",
+  "chrono",
+  "uuid",
+], optional = true }
+serde = { version = "1.0.218" }
+chrono = { version = "0.4.41", features = ["serde"] }
+futures = { version = "0.3", optional = true }
+wasm-bindgen-futures = "0.4.50"
+anyhow = "1.0.98"
+
 [features]
 csr = ["leptos/csr"]
 hydrate = ["leptos/hydrate"]
@@ -27,6 +40,10 @@ ssr = [
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",
+
+  #Added by me
+  "dep:sqlx",
+  "dep:futures",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode
