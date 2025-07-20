@@ -29,3 +29,19 @@ pub async fn get_today_members() -> Result<Vec<Member>, ServerFnError> {
         }
     }
 }
+
+#[server(AllMembers, "/api/members")]
+pub async fn get_all_members() -> Result<Vec<Member>, ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = Member::get_all(&pool).await;
+
+    match result {
+        Ok(members) => Ok(members),
+        Err(e) => {
+            leptos::logging::log!("Failed to get today's birthday members: {}", e);
+            Err(ServerFnError::new("Failed to retrieve birthday members"))
+        }
+    }
+}

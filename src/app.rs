@@ -7,7 +7,10 @@ use leptos_router::{
 
 use crate::{
     components::{navbar::NavbarComponent, toast::ToastComponent},
-    pages::home::HomePage,
+    pages::{
+        home::HomePage,
+        members::{list::MembersPage, upsert::UpsertMemberPage},
+    },
 };
 
 #[component]
@@ -31,6 +34,8 @@ pub fn App() -> impl IntoView {
             <main class="p-3">
                 <Routes fallback=move || "Not found.">
                     <Route path=StaticSegment("") view=HomePage/>
+                    <Route path=StaticSegment("/members") view=MembersPage/>
+                    <Route path=StaticSegment("/members/new") view=UpsertMemberPage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
                 </Routes>
             </main>
