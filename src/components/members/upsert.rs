@@ -161,7 +161,7 @@ pub fn UpsertMember(edit_mode: RwSignal<bool>, model: RwSignal<Member>) -> impl 
                                 // birthdate
                                 <div class="w-full">
                                     <fieldset class="fieldset">
-                                        <label class="label" for="birthdate">"Fecha de Nacimiento (Y-m-d)"</label>
+                                        <label class="label" for="birthdate">"Fecha de Nacimiento"</label>
                                         <input type="date"
                                             class="input w-full"
                                             name="birthdate"

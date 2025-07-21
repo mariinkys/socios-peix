@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use crate::core::{
-    entities::{country::Country, gender::Gender},
-    models::{cupon::Cupon, interest::Interest},
-};
+use crate::core::entities::{country::Country, gender::Gender};
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
