@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use chrono::NaiveDate;
 use leptos::prelude::*;
 
 #[cfg(feature = "ssr")]
@@ -12,10 +11,7 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::{
-    entities::{country::Country, gender::Gender},
-    models::member::Member,
-};
+use crate::core::models::member::Member;
 
 #[server(GetTodayMembers, "/api/today-members")]
 pub async fn get_today_members() -> Result<Vec<Member>, ServerFnError> {
