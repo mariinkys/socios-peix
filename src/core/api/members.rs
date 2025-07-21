@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+use chrono::NaiveDate;
 use leptos::prelude::*;
 
 #[cfg(feature = "ssr")]
@@ -11,7 +12,10 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::models::member::Member;
+use crate::core::{
+    entities::{country::Country, gender::Gender},
+    models::member::Member,
+};
 
 #[server(GetTodayMembers, "/api/today-members")]
 pub async fn get_today_members() -> Result<Vec<Member>, ServerFnError> {
@@ -58,6 +62,25 @@ pub async fn get_member(member_id: i32) -> Result<Member, ServerFnError> {
         Err(e) => {
             leptos::logging::log!("Failed to get single member: {}", e);
             Err(ServerFnError::new("Failed to retrieve single member"))
+        }
+    }
+}
+
+#[server(UpsertMember, "/api/member/upsert")]
+pub async fn upsert_memeber(member: Member) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = match member.id {
+        Some(_) => Member::edit(&pool, member).await,
+        None => Member::add(&pool, member).await,
+    };
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to upsert member: {}", e);
+            Err(ServerFnError::new("Failed to upsert member"))
         }
     }
 }

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS members (
     name TEXT NOT NULL,
     surname TEXT NOT NULL DEFAULT '',
     second_surname TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
     birthdate DATE,
     phone TEXT NOT NULL DEFAULT '',
     country_id INTEGER NOT NULL,

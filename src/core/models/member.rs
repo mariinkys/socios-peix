@@ -15,6 +15,7 @@ pub struct Member {
     pub name: String,
     pub surname: String,
     pub second_surname: String,
+    pub email: String,
     pub birthdate: Option<NaiveDate>,
     pub phone: String,
     pub country: Country, // Country is a local_model, not a database table.
@@ -22,10 +23,6 @@ pub struct Member {
     pub notes: String,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
-
-    // Not in the database, helps us JOIN other tables and return a complete model.
-    pub interests: Vec<Interest>,
-    pub cupons: Vec<Cupon>,
 }
 
 impl std::fmt::Display for Member {
@@ -34,17 +31,19 @@ impl std::fmt::Display for Member {
     }
 }
 
-#[cfg(feature = "ssr")]
 impl Member {
     /// Returns true if the entity is valid (ready for submission to the db)
     pub fn is_valid(&self) -> bool {
-        if self.name.is_empty() {
+        if self.name.is_empty() || self.surname.is_empty() {
             return false;
         }
 
         true
     }
+}
 
+#[cfg(feature = "ssr")]
+impl Member {
     pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Member>, sqlx::Error> {
         let rows = sqlx::query(
             "SELECT 
@@ -52,6 +51,7 @@ impl Member {
                 name,
                 surname,
                 second_surname,
+                email,
                 birthdate,
                 phone,
                 country_id,
@@ -72,6 +72,7 @@ impl Member {
             let name: String = row.try_get("name")?;
             let surname: String = row.try_get("surname")?;
             let second_surname: String = row.try_get("second_surname")?;
+            let email: String = row.try_get("email")?;
             let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
             let phone: String = row.try_get("phone")?;
             let country_id: i32 = row.try_get("country_id")?;
@@ -83,17 +84,12 @@ impl Member {
             let country = Country::from_id(country_id).unwrap_or_default();
             let gender = Gender::from_id(gender_id).unwrap_or_default();
 
-            // Get interests for this member
-            let interests = Interest::get_member_interests(pool, id.unwrap_or(0)).await?;
-
-            // Get cupons for this member
-            let cupons = Cupon::get_member_cupons(pool, id.unwrap_or(0)).await?;
-
             let member = Member {
                 id,
                 name,
                 surname,
                 second_surname,
+                email,
                 birthdate,
                 phone,
                 country,
@@ -101,8 +97,6 @@ impl Member {
                 notes,
                 created_at,
                 updated_at,
-                interests,
-                cupons,
             };
             result.push(member);
         }
@@ -116,6 +110,7 @@ impl Member {
                 name,
                 surname,
                 second_surname,
+                email,
                 birthdate,
                 phone,
                 country_id,
@@ -134,6 +129,7 @@ impl Member {
         let name: String = row.try_get("name")?;
         let surname: String = row.try_get("surname")?;
         let second_surname: String = row.try_get("second_surname")?;
+        let email: String = row.try_get("email")?;
         let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
         let phone: String = row.try_get("phone")?;
         let country_id: i32 = row.try_get("country_id")?;
@@ -145,14 +141,12 @@ impl Member {
         let country = Country::from_id(country_id).unwrap_or_default();
         let gender = Gender::from_id(gender_id).unwrap_or_default();
 
-        let interests = Interest::get_member_interests(pool, member_id).await?;
-        let cupons = Cupon::get_member_cupons(pool, member_id).await?;
-
         let member = Member {
             id,
             name,
             surname,
             second_surname,
+            email,
             birthdate,
             phone,
             country,
@@ -160,18 +154,17 @@ impl Member {
             notes,
             created_at,
             updated_at,
-            interests,
-            cupons,
         };
 
         Ok(member)
     }
 
     pub async fn add(pool: &Pool<Sqlite>, member: Member) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO members (name, surname, second_surname, birthdate, phone, country_id, gender_id, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)")
+        sqlx::query("INSERT INTO members (name, surname, second_surname, email, birthdate, phone, country_id, gender_id, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
             .bind(member.name)
             .bind(member.surname)
             .bind(member.second_surname)
+            .bind(member.email)
             .bind(member.birthdate)
             .bind(member.phone)
             .bind(member.country.to_id())
@@ -184,7 +177,7 @@ impl Member {
     }
 
     pub async fn edit(pool: &Pool<Sqlite>, member: Member) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE members SET name = $1, surname = $2, second_surname = $3, birthdate = $4, phone = $5, country_id = $6, gender_id = $7, notes = $8, updated_at = CURRENT_TIMESTAMP WHERE id = $9")
+        sqlx::query("UPDATE members SET name = $1, surname = $2, second_surname = $3, birthdate = $4, phone = $5, country_id = $6, gender_id = $7, notes = $8, email = $9, updated_at = CURRENT_TIMESTAMP WHERE id = $10")
             .bind(member.name)
             .bind(member.surname)
             .bind(member.second_surname)
@@ -193,6 +186,7 @@ impl Member {
             .bind(member.country.to_id())
             .bind(member.gender.to_id())
             .bind(member.notes)
+            .bind(member.email)
             .bind(member.id)
             .execute(pool)
             .await?;
@@ -225,6 +219,7 @@ impl Member {
                 name,
                 surname,
                 second_surname,
+                email,
                 birthdate,
                 phone,
                 country_id,
@@ -250,6 +245,7 @@ impl Member {
             let name: String = row.try_get("name")?;
             let surname: String = row.try_get("surname")?;
             let second_surname: String = row.try_get("second_surname")?;
+            let email: String = row.try_get("email")?;
             let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
             let phone: String = row.try_get("phone")?;
             let country_id: i32 = row.try_get("country_id")?;
@@ -261,17 +257,12 @@ impl Member {
             let country = Country::from_id(country_id).unwrap_or_default();
             let gender = Gender::from_id(gender_id).unwrap_or_default();
 
-            // Get interests for this member
-            let interests = Interest::get_member_interests(pool, id.unwrap_or(0)).await?;
-
-            // Get cupons for this member
-            let cupons = Cupon::get_member_cupons(pool, id.unwrap_or(0)).await?;
-
             let member = Member {
                 id,
                 name,
                 surname,
                 second_surname,
+                email,
                 birthdate,
                 phone,
                 country,
@@ -279,8 +270,6 @@ impl Member {
                 notes,
                 created_at,
                 updated_at,
-                interests,
-                cupons,
             };
             result.push(member);
         }
