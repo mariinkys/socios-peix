@@ -66,8 +66,7 @@ pub fn UpsertMemberPage() -> impl IntoView {
                         when=move || { member_model.get().id.is_some() }
                         fallback=|| view! { <p></p> }
                     >
-                        <MemberInterestsUpsert edit_mode=edit_mode member_id=member_model.get().id.unwrap()/>
-
+                        <MemberInterestsUpsert edit_mode=edit_mode member_id=member_model.get_untracked().id.unwrap()/>
                     </Show>
                 </div>
             </ErrorBoundary>
