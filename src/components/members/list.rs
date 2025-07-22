@@ -1,9 +1,6 @@
 use leptos::prelude::*;
 
-use crate::{
-    components::page_loading::PageLoadingComponent,
-    core::api::members::{self, get_all_members},
-};
+use crate::{components::page_loading::PageLoadingComponent, core::api::members::get_all_members};
 
 #[component]
 pub fn MembersList() -> impl IntoView {
