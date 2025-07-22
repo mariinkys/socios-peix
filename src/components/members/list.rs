@@ -57,12 +57,25 @@ pub fn MembersList() -> impl IntoView {
                     <div class="card-body">
                         <div class="flex justify-between gap-1">
                             <h2 class="card-title">"Todos los Socios"</h2>
-                            <input class="input input-primary" type="text"
-                                on:input:target=move |ev| {
-                                    search_bar.set(ev.target().value());
-                                }
-                                prop:value=search_bar
-                            />
+                            <label class="input">
+                                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <g
+                                    stroke-linejoin="round"
+                                    stroke-linecap="round"
+                                    stroke-width="2.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    >
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.3-4.3"></path>
+                                    </g>
+                                </svg>
+                                <input type="search" class="grow" placeholder="Buscar"
+                                    on:input:target=move |ev| {
+                                        search_bar.set(ev.target().value());
+                                    }
+                                    prop:value=search_bar/>
+                            </label>
                             <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
                         </div>
 
