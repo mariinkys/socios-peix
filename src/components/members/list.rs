@@ -70,17 +70,24 @@ pub fn MembersList() -> impl IntoView {
                             )
                             .to_lowercase();
 
-                            let query_match = full_name.contains(&query)
-                                || member.email.to_lowercase().contains(&query)
-                                || member.country.to_string().to_lowercase().contains(&query)
-                                || member.phone.to_string().to_lowercase().contains(&query);
+                            let query_ok = if query.is_empty() {
+                                true
+                            } else {
+                                full_name.contains(&query)
+                                    || member.email.to_lowercase().contains(&query)
+                                    || member.country.to_string().to_lowercase().contains(&query)
+                                    || member.phone.to_string().to_lowercase().contains(&query)
+                            };
 
-                            let interest_match = !selected_interests.is_empty()
-                                && selected_interests
+                            let interest_ok = if selected_interests.is_empty() {
+                                true
+                            } else {
+                                selected_interests
                                     .iter()
-                                    .all(|selected| interests.contains(selected));
+                                    .all(|selected| interests.contains(selected))
+                            };
 
-                            query_match && interest_match
+                            query_ok && interest_ok
                         })
                         .collect(),
                 )
@@ -135,14 +142,16 @@ pub fn MembersList() -> impl IntoView {
                                     when=move || { !selectable_interests.get().is_empty() }
                                     fallback=|| view! { <p class="text-center">"No hay intereses..."</p> }
                                 >
-                                    <For each=move || selectable_interests.get() key=|i| i.interest.id children=move |i| {
-                                        view!{
-                                            <label class="label">
-                                                <input type="checkbox" bind:checked=i.selected class="checkbox checkbox-primary" />
-                                                {i.interest.name}
-                                            </label>
-                                        }
-                                    }/>
+                                    <div class="flex flex-wrap gap-2">
+                                        <For each=move || selectable_interests.get() key=|i| i.interest.id children=move |i| {
+                                            view!{
+                                                <label class="label">
+                                                    <input type="checkbox" bind:checked=i.selected class="checkbox checkbox-primary" />
+                                                    {i.interest.name}
+                                                </label>
+                                            }
+                                        }/>
+                                    </div>
                                 </Show>
                             }
                         }/>
