@@ -15,6 +15,7 @@ pub fn NavbarComponent() -> impl IntoView {
                     tabindex="0"
                     class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                     <li><a href="/members">"Socios"</a></li>
+                    <li><a href="/interests">"Intereses"</a></li>
                     <li><a>"Cupones"</a></li>
                     <li><a>"Configuración"</a></li>
                 </ul>

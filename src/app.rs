@@ -9,6 +9,7 @@ use crate::{
     components::{navbar::NavbarComponent, toast::ToastComponent},
     pages::{
         home::HomePage,
+        interests::{list::InterestsPage, upsert::UpsertInterestPage},
         members::{list::MembersPage, upsert::UpsertMemberPage},
     },
 };
@@ -36,6 +37,8 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("") view=HomePage/>
                     <Route path=path!("/members") view=MembersPage/>
                     <Route path=path!("/members/:id") view=UpsertMemberPage/>
+                    <Route path=path!("/interests") view=InterestsPage/>
+                    <Route path=path!("/interests/:id") view=UpsertInterestPage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
                 </Routes>
             </main>

@@ -73,9 +73,6 @@ pub fn UpsertMember(edit_mode: RwSignal<bool>, model: RwSignal<Member>) -> impl 
                         </div>
                         <form class="w-full" on:submit=on_submit>
                             <div class="flex flex-col gap-2 w-full">
-                                // We need the id for the update but we don't want to show it.
-                                <input type="hidden" name="id" autocomplete="off" prop:value={move || model.get().id}/>
-
                                 // name
                                 <div class="w-full">
                                     <fieldset class="fieldset">

@@ -41,7 +41,7 @@ pub fn MembersList() -> impl IntoView {
                                                         <th>"Fecha de Nacimiento"</th>
                                                         <th>"Género"</th>
                                                         <th>"País"</th>
-                                                        <th>"Editar"</th>
+                                                        <th class="text-right">"Editar"</th>
                                                     </tr>
                                                     </thead>
                                                     <For each=move || members_result.get() key=|m| m.id children=move |m| {
@@ -53,7 +53,7 @@ pub fn MembersList() -> impl IntoView {
                                                                 <td>{m.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
                                                                 <td>{m.gender.to_string()}</td>
                                                                 <td>{m.country.to_string()}</td>
-                                                                <td><a class="btn btn-primary" href=format!("/members/{}", m.id.unwrap_or_default())>"Ver"</a></td>
+                                                                <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.id.unwrap_or_default())>"Ver"</a></td>
                                                             </tr>
                                                         }
                                                     }/>
