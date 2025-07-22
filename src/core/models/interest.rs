@@ -6,6 +6,18 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Row, Sqlite};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SelectableInterest {
+    pub interest: Interest,
+    pub is_selected: bool,
+}
+
+impl std::fmt::Display for SelectableInterest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.interest.name)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Interest {
     pub id: Option<i32>,
     pub name: String,
@@ -34,20 +46,31 @@ impl Interest {
 
 #[cfg(feature = "ssr")]
 impl Interest {
+    /// Returns all interests with their selection status for a specific member
     pub async fn get_member_interests(
         pool: &Pool<Sqlite>,
         member_id: i32,
-    ) -> Result<Vec<Interest>, sqlx::Error> {
+    ) -> Result<Vec<SelectableInterest>, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT interests.* FROM interests 
-             INNER JOIN member_interests ON interests.id = member_interests.interest_id 
-             WHERE member_interests.member_id = $1",
+            "SELECT 
+                interests.id,
+                interests.name,
+                interests.description,
+                interests.is_deleted,
+                interests.created_at,
+                interests.updated_at,
+                CASE WHEN member_interests.member_id IS NOT NULL THEN 1 ELSE 0 END as is_selected
+             FROM interests
+             LEFT JOIN member_interests ON interests.id = member_interests.interest_id 
+                AND member_interests.member_id = $1
+             WHERE interests.is_deleted = 0
+             ORDER BY interests.name",
         )
         .bind(member_id)
         .fetch_all(pool)
         .await?;
 
-        let mut interests = Vec::<Interest>::new();
+        let mut selectable_interests = Vec::<SelectableInterest>::new();
         for row in rows {
             let interest = Interest {
                 id: row.try_get("id")?,
@@ -57,10 +80,52 @@ impl Interest {
                 created_at: row.try_get("created_at")?,
                 updated_at: row.try_get("updated_at")?,
             };
-            interests.push(interest);
+
+            let is_selected: i32 = row.try_get("is_selected")?;
+            let selectable_interest = SelectableInterest {
+                interest,
+                is_selected: is_selected == 1,
+            };
+
+            selectable_interests.push(selectable_interest);
         }
 
-        Ok(interests)
+        Ok(selectable_interests)
+    }
+
+    /// Updates member interests based on the provided selectable interests
+    pub async fn update_member_interests(
+        pool: &Pool<Sqlite>,
+        member_id: i32,
+        selectable_interests: Vec<SelectableInterest>,
+    ) -> Result<(), sqlx::Error> {
+        let mut tx = pool.begin().await?;
+
+        // remove all existing member interests for this member
+        sqlx::query("DELETE FROM member_interests WHERE member_id = $1")
+            .bind(member_id)
+            .execute(&mut *tx)
+            .await?;
+
+        // insert the selected interests
+        for selectable_interest in selectable_interests {
+            if selectable_interest.is_selected {
+                if let Some(interest_id) = selectable_interest.interest.id {
+                    sqlx::query(
+                        "INSERT INTO member_interests (member_id, interest_id, created_at) 
+                         VALUES ($1, $2, datetime('now'))",
+                    )
+                    .bind(member_id)
+                    .bind(interest_id)
+                    .execute(&mut *tx)
+                    .await?;
+                }
+            }
+        }
+
+        tx.commit().await?;
+
+        Ok(())
     }
 
     pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Interest>, sqlx::Error> {

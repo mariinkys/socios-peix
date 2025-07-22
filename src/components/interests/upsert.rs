@@ -98,7 +98,6 @@ pub fn UpsertInterest(edit_mode: RwSignal<bool>, model: RwSignal<Interest>) -> i
                                             class="input w-full"
                                             name="description"
                                             id="description"
-                                            required
                                             autocomplete="off"
                                             disabled={move || !edit_mode.get() }
                                             prop:value={move || model.get().description}
