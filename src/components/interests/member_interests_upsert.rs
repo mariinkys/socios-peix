@@ -83,7 +83,7 @@ pub fn MemberInterestsUpsert(edit_mode: RwSignal<bool>, member_id: i32) -> impl 
             <ErrorBoundary fallback=|error| view! {
                 <p class="text-xl text-center text-red-500">"An error occurred: " {format!("{error:?}")}</p>
             }>
-                <div class="card card-border bg-base-200 w-full">
+                <div class="basis-1/3 card card-border bg-base-200 w-full overflow-y-auto">
                     <div class="card-body">
                         <div class="flex gap-1">
                             <h2 class="card-title grow">"Intereses"</h2>
@@ -136,22 +136,29 @@ pub fn MemberInterestsUpsert(edit_mode: RwSignal<bool>, member_id: i32) -> impl 
                                 }
                             }/>
                         </div>
-                        <For each=move || member_interests.get().and_then(|res| res.ok()).unwrap_or_default() key=|i| i.id children=move |i| {
-                            view! {
-                                <ActionForm action=delete_member_interest_action>
-                                    <div class="card card-border bg-base-300 w-full">
-                                        <div class="card-body">
-                                            <input type="hidden" name="member_id" autocomplete="off" prop:value={member_id}/>
-                                            <input type="hidden" name="interest_id" autocomplete="off" prop:value={i.id.unwrap_or_default()}/>
-                                            <div class="flex gap-1">
-                                                <h3 class="card-title grow">{i.name}</h3>
-                                                <button disabled={ move || !edit_mode.get() } type="submit" class="btn btn-danger">"Borrar"</button>
+                        <div class="flex flex-col gap-2">
+                            <Show
+                                when=move || { member_interests.get().is_some_and(|x| x.is_ok_and(|y| !y.is_empty()))}
+                                fallback=|| view! { <p class="text-center">"No hay intereses..."</p> }
+                            >
+                                <For each=move || member_interests.get().and_then(|res| res.ok()).unwrap_or_default() key=|i| i.id children=move |i| {
+                                    view! {
+                                        <ActionForm action=delete_member_interest_action>
+                                            <div class="card card-border bg-base-300 w-full">
+                                                <div class="card-body p-3">
+                                                    <input type="hidden" name="member_id" autocomplete="off" prop:value={member_id}/>
+                                                    <input type="hidden" name="interest_id" autocomplete="off" prop:value={i.id.unwrap_or_default()}/>
+                                                    <div class="flex gap-1">
+                                                        <h3 class="card-title grow">{i.name}</h3>
+                                                        <button disabled={ move || !edit_mode.get() } type="submit" class="btn btn-error">"Borrar"</button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </ActionForm>
-                            }
-                        }/>
+                                        </ActionForm>
+                                    }
+                                }/>
+                            </Show>
+                        </div>
                     </div>
                 </div>
             </ErrorBoundary>

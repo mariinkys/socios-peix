@@ -53,7 +53,6 @@ pub fn UpsertMemberPage() -> impl IntoView {
                     <button
                         class="btn"
                         class:btn-accent=move || !edit_mode.get()
-                        class:btn-error=move || edit_mode.get()
                         disabled=move || member_model.get().id.is_none()
                         on:click=move |_| edit_mode.update(|val| *val = !*val)
                     >
@@ -61,15 +60,16 @@ pub fn UpsertMemberPage() -> impl IntoView {
                     </button>
                 </div>
 
-                <UpsertMember edit_mode=edit_mode model=member_model/>
-                <Show
-                    when=move || { member_model.get().id.is_some() }
-                    fallback=|| view! { <p></p> }
-                >
-                <div class="mt-3">
-                    <MemberInterestsUpsert edit_mode=edit_mode member_id=member_model.get().id.unwrap()/>
+                <div class="flex flex-col md:flex-row w-full gap-2 h-full md:h-[80vh]">
+                    <UpsertMember edit_mode=edit_mode model=member_model/>
+                    <Show
+                        when=move || { member_model.get().id.is_some() }
+                        fallback=|| view! { <p></p> }
+                    >
+                        <MemberInterestsUpsert edit_mode=edit_mode member_id=member_model.get().id.unwrap()/>
+
+                    </Show>
                 </div>
-                </Show>
             </ErrorBoundary>
         </Suspense>
     }
