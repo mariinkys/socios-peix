@@ -15,6 +15,15 @@ pub struct Interest {
     pub updated_at: Option<NaiveDateTime>,
 }
 
+impl PartialEq for Interest {
+    fn eq(&self, other: &Self) -> bool {
+        match (self.id, other.id) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
 impl std::fmt::Display for Interest {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)

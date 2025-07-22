@@ -11,7 +11,7 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::models::member::Member;
+use crate::core::models::{interest::Interest, member::Member};
 
 #[server(GetTodayMembers, "/api/today-members")]
 pub async fn get_today_members() -> Result<Vec<Member>, ServerFnError> {
@@ -36,6 +36,23 @@ pub async fn get_all_members() -> Result<Vec<Member>, ServerFnError> {
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
 
     let result = Member::get_all(&pool).await;
+
+    match result {
+        Ok(members) => Ok(members),
+        Err(e) => {
+            leptos::logging::log!("Failed to get all members members: {}", e);
+            Err(ServerFnError::new("Failed to retrieve all members"))
+        }
+    }
+}
+
+#[server(AllMembersWithInterests, "/api/members-with-interests")]
+pub async fn get_all_members_with_interests() -> Result<Vec<(Member, Vec<Interest>)>, ServerFnError>
+{
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = Member::get_all_with_interests(&pool).await;
 
     match result {
         Ok(members) => Ok(members),

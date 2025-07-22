@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use crate::core::entities::{country::Country, gender::Gender};
+#[cfg(feature = "ssr")]
+use crate::core::models::interest::Interest;
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Pool, Row, Sqlite};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Member {
     pub id: Option<i32>,
     pub name: String,
@@ -25,6 +27,12 @@ pub struct Member {
 impl std::fmt::Display for Member {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
+    }
+}
+
+impl PartialEq for Member {
+    fn eq(&self, other: &Self) -> bool {
+        self.id.is_some_and(|x| x == other.id.unwrap_or_default())
     }
 }
 
@@ -96,6 +104,70 @@ impl Member {
                 updated_at,
             };
             result.push(member);
+        }
+        Ok(result)
+    }
+
+    pub async fn get_all_with_interests(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Vec<(Member, Vec<Interest>)>, sqlx::Error> {
+        let rows = sqlx::query(
+            "SELECT 
+                id, 
+                name,
+                surname,
+                second_surname,
+                email,
+                birthdate,
+                phone,
+                country_id,
+                gender_id,
+                notes,
+                created_at, 
+                updated_at
+            FROM members 
+            ORDER BY id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        let mut result = Vec::<(Member, Vec<Interest>)>::new();
+
+        for row in rows {
+            let id: Option<i32> = row.try_get("id")?;
+            let name: String = row.try_get("name")?;
+            let surname: String = row.try_get("surname")?;
+            let second_surname: String = row.try_get("second_surname")?;
+            let email: String = row.try_get("email")?;
+            let birthdate: Option<NaiveDate> = row.try_get("birthdate")?;
+            let phone: String = row.try_get("phone")?;
+            let country_id: i32 = row.try_get("country_id")?;
+            let gender_id: i32 = row.try_get("gender_id")?;
+            let notes: String = row.try_get("notes")?;
+            let created_at: Option<NaiveDateTime> = row.try_get("created_at")?;
+            let updated_at: Option<NaiveDateTime> = row.try_get("updated_at")?;
+
+            let country = Country::from_id(country_id).unwrap_or_default();
+            let gender = Gender::from_id(gender_id).unwrap_or_default();
+
+            // Get interests for this member
+            let interests = Interest::get_member_interests(pool, id.unwrap_or(0)).await?;
+
+            let member = Member {
+                id,
+                name,
+                surname,
+                second_surname,
+                email,
+                birthdate,
+                phone,
+                country,
+                gender,
+                notes,
+                created_at,
+                updated_at,
+            };
+            result.push((member, interests));
         }
         Ok(result)
     }

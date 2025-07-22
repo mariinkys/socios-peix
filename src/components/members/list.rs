@@ -1,10 +1,22 @@
 use leptos::prelude::*;
 
-use crate::{components::page_loading::PageLoadingComponent, core::api::members::get_all_members};
+use crate::{
+    components::{dialog::DialogComponent, page_loading::PageLoadingComponent},
+    core::{
+        api::{interests::get_all_interests, members::get_all_members_with_interests},
+        models::interest::Interest,
+    },
+};
+
+#[derive(Debug, Clone)]
+struct LeptosSelectableInterest {
+    interest: Interest,
+    selected: RwSignal<bool>,
+}
 
 #[component]
 pub fn MembersList() -> impl IntoView {
-    let members = OnceResource::new(get_all_members());
+    let members = OnceResource::new(get_all_members_with_interests());
 
     let search_bar = RwSignal::new(String::new());
     let search_query = RwSignal::new(String::new());
@@ -18,27 +30,57 @@ pub fn MembersList() -> impl IntoView {
         );
     });
 
+    let all_interests = OnceResource::new(get_all_interests());
+    let selectable_interests = RwSignal::new(Vec::new());
+    let interest_filter_dialog_ref_node: NodeRef<leptos::html::Dialog> = NodeRef::new();
+    Effect::new(move |_| {
+        if let Some(Ok(interests)) = all_interests.get() {
+            let mut result = vec![];
+            for interest in interests {
+                result.push(LeptosSelectableInterest {
+                    interest,
+                    selected: RwSignal::new(false),
+                })
+            }
+            selectable_interests.set(result);
+        }
+    });
+
     let filtered_members = Memo::new(move |_| {
         if let Some(Ok(members_list)) = members.get() {
             let query = search_query.get().to_lowercase();
+            let selected_interests = selectable_interests.with(|interests| {
+                interests
+                    .iter()
+                    .filter(|s| s.selected.get())
+                    .map(|s| s.interest.clone())
+                    .collect::<Vec<_>>()
+            });
 
-            if query.is_empty() {
+            if query.is_empty() && selected_interests.is_empty() {
                 Some(members_list)
             } else {
                 Some(
                     members_list
                         .into_iter()
-                        .filter(|member| {
+                        .filter(|(member, interests)| {
                             let full_name = format!(
                                 "{} {} {}",
                                 member.name, member.surname, member.second_surname
                             )
                             .to_lowercase();
 
-                            full_name.contains(&query)
+                            let query_match = full_name.contains(&query)
                                 || member.email.to_lowercase().contains(&query)
                                 || member.country.to_string().to_lowercase().contains(&query)
-                                || member.phone.to_string().to_lowercase().contains(&query)
+                                || member.phone.to_string().to_lowercase().contains(&query);
+
+                            let interest_match = !selected_interests.is_empty()
+                                && selected_interests
+                                    .iter()
+                                    .all(|selected| interests.contains(selected));
+
+                            query_match && interest_match
                         })
                         .collect(),
                 )
@@ -55,7 +97,7 @@ pub fn MembersList() -> impl IntoView {
             }>
                 <div class="card card-border bg-base-200 w-full">
                     <div class="card-body">
-                        <div class="flex justify-between gap-1">
+                        <div class="flex justify-between gap-2">
                             <h2 class="card-title">"Todos los Socios"</h2>
                             <label class="input">
                                 <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -76,8 +118,34 @@ pub fn MembersList() -> impl IntoView {
                                     }
                                     prop:value=search_bar/>
                             </label>
-                            <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
+                            <div class="flex gap-2">
+                                <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
+                                <button
+                                class="btn btn-accent"
+                                on:click=move |_| {
+                                    let _ = interest_filter_dialog_ref_node.get().unwrap().show_modal();
+                                }
+                            >"Filtrar"</button>
+                            </div>
                         </div>
+
+                        <DialogComponent dialog_title="Filtrar" dialog_node_ref=interest_filter_dialog_ref_node dialog_content=move || {
+                            view! {
+                                <Show
+                                    when=move || { !selectable_interests.get().is_empty() }
+                                    fallback=|| view! { <p class="text-center">"No hay intereses..."</p> }
+                                >
+                                    <For each=move || selectable_interests.get() key=|i| i.interest.id children=move |i| {
+                                        view!{
+                                            <label class="label">
+                                                <input type="checkbox" bind:checked=i.selected class="checkbox checkbox-primary" />
+                                                {i.interest.name}
+                                            </label>
+                                        }
+                                    }/>
+                                </Show>
+                            }
+                        }/>
 
                         <Suspense fallback=|| view! { <p class="text-center">"Cargando socios..."</p> }>
                             { move || {
@@ -100,7 +168,7 @@ pub fn MembersList() -> impl IntoView {
                                                     </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <For each=move || filtered_members.get().unwrap_or_default() key=|m| m.id children=move |m| {
+                                                        <For each=move || filtered_members.get().unwrap_or_default() key=|(m, _)| m.id children=move |(m, _)| {
                                                             view! {
                                                                 <tr>
                                                                     <th>{m.id.unwrap_or_default()}</th>
