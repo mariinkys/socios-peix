@@ -1,10 +1,15 @@
 use leptos::prelude::*;
 
 use crate::{
-    components::{dialog::DialogComponent, page_loading::PageLoadingComponent},
+    components::{
+        dialog::DialogComponent,
+        page_loading::PageLoadingComponent,
+        toast::{ToastMessage, ToastType},
+    },
     core::{
         api::{interests::get_all_interests, members::get_all_members_with_interests},
-        models::interest::Interest,
+        models::{interest::Interest, member::Member},
+        utils::{generate_members_excel, MembersExcelModel},
     },
 };
 
@@ -16,6 +21,7 @@ struct LeptosSelectableInterest {
 
 #[component]
 pub fn MembersList() -> impl IntoView {
+    let set_toast: WriteSignal<ToastMessage> = expect_context();
     let members = OnceResource::new(get_all_members_with_interests());
 
     let search_bar = RwSignal::new(String::new());
@@ -97,6 +103,77 @@ pub fn MembersList() -> impl IntoView {
         }
     });
 
+    let export_excel_action = Action::new(move |model: &Option<Vec<(Member, Vec<Interest>)>>| {
+        let current_model = model.clone();
+        async move {
+            if let Some(model) = current_model {
+                let mut data = vec![];
+                for m in model {
+                    data.push(MembersExcelModel {
+                        member: m.0,
+                        interests: m.1,
+                    })
+                }
+                let result = generate_members_excel(data).await;
+
+                match result {
+                    Ok(base64_excel) => {
+                        let download_excel = move || {
+                            let window = leptos::prelude::window();
+                            let document = window.document().unwrap();
+
+                            let binary_string = window.atob(&base64_excel).unwrap();
+                            let bytes = leptos::web_sys::js_sys::Uint8Array::new_with_length(
+                                binary_string.len() as u32,
+                            );
+
+                            for (i, char) in binary_string.chars().enumerate() {
+                                bytes.set_index(i as u32, char as u8);
+                            }
+
+                            let array = leptos::web_sys::js_sys::Array::new();
+                            array.push(&bytes);
+                            let blob =
+                                leptos::web_sys::Blob::new_with_u8_array_sequence(&array).unwrap();
+                            let url =
+                                leptos::web_sys::Url::create_object_url_with_blob(&blob).unwrap();
+
+                            let a = document.create_element("a").unwrap();
+                            a.set_attribute("href", &url).unwrap();
+                            a.set_attribute("download", "export.xlsx").unwrap();
+
+                            if let Some(a_element) =
+                                wasm_bindgen::JsCast::dyn_ref::<leptos::web_sys::HtmlElement>(&a)
+                            {
+                                document.body().unwrap().append_child(&a).unwrap();
+                                a_element.click();
+                                document.body().unwrap().remove_child(&a).unwrap();
+                                leptos::web_sys::Url::revoke_object_url(&url).unwrap();
+                            } else {
+                                leptos::web_sys::Url::revoke_object_url(&url).unwrap();
+                            }
+                        };
+
+                        download_excel();
+                    }
+                    Err(err) => {
+                        set_toast.set(ToastMessage {
+                            message: format!("Error Exporting {err}"),
+                            toast_type: ToastType::Error,
+                            visible: true,
+                        });
+                    }
+                }
+            } else {
+                set_toast.set(ToastMessage {
+                    message: String::from("No data to export"),
+                    toast_type: ToastType::Error,
+                    visible: true,
+                });
+            }
+        }
+    });
+
     view! {
         <Transition fallback=move || view! { <PageLoadingComponent/> }>
             <ErrorBoundary fallback=|error| view! {
@@ -126,13 +203,19 @@ pub fn MembersList() -> impl IntoView {
                                     prop:value=search_bar/>
                             </label>
                             <div class="flex gap-2">
-                                <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
                                 <button
-                                class="btn btn-accent"
-                                on:click=move |_| {
-                                    let _ = interest_filter_dialog_ref_node.get().unwrap().show_modal();
-                                }
-                            >"Filtrar"</button>
+                                    class="btn btn-success"
+                                    on:click=move |_| {
+                                        export_excel_action.dispatch(filtered_members.get_untracked());
+                                    }
+                                >"Exportar"</button>
+                                <a class="btn btn-primary" href="/members/new">"Añadir"</a>
+                                <button
+                                    class="btn btn-accent"
+                                    on:click=move |_| {
+                                        let _ = interest_filter_dialog_ref_node.get().unwrap().show_modal();
+                                    }
+                                >"Filtrar"</button>
                             </div>
                         </div>
 
