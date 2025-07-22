@@ -11,7 +11,7 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::models::interest::{Interest, SelectableInterest};
+use crate::core::models::interest::Interest;
 
 #[server(AllInterests, "/api/interests")]
 pub async fn get_all_interests() -> Result<Vec<Interest>, ServerFnError> {
@@ -65,9 +65,7 @@ pub async fn upsert_memeber(interest: Interest) -> Result<(), ServerFnError> {
 }
 
 #[server(MemberInterests, "/api/interests/member")]
-pub async fn get_member_interests(
-    member_id: i32,
-) -> Result<Vec<SelectableInterest>, ServerFnError> {
+pub async fn get_member_interests(member_id: i32) -> Result<Vec<Interest>, ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
 
@@ -82,21 +80,37 @@ pub async fn get_member_interests(
     }
 }
 
-#[server(UpdateMemberInterest, "/api/interest/update/member")]
-pub async fn update_memeber_interests(
-    member_id: i32,
-    selected_interests: Vec<SelectableInterest>,
-) -> Result<(), ServerFnError> {
+#[server(AddMemberInterest, "/api/interest/add/member")]
+pub async fn add_memeber_interest(member_id: i32, interest_id: i32) -> Result<(), ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
 
-    let result = Interest::update_member_interests(&pool, member_id, selected_interests).await;
+    let result = Interest::add_member_interest(&pool, member_id, interest_id).await;
 
     match result {
         Ok(()) => Ok(()),
         Err(e) => {
-            leptos::logging::log!("Failed to update member interests: {}", e);
-            Err(ServerFnError::new("Failed to update member interests"))
+            leptos::logging::log!("Failed to add member interest: {}", e);
+            Err(ServerFnError::new("Failed to add member interest"))
+        }
+    }
+}
+
+#[server(RemoveMemberInterest, "/api/interest/remove/member")]
+pub async fn remove_memeber_interest(
+    member_id: i32,
+    interest_id: i32,
+) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = Interest::remove_member_interest(&pool, member_id, interest_id).await;
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to remove member interest: {}", e);
+            Err(ServerFnError::new("Failed to remove member interest"))
         }
     }
 }
