@@ -7,57 +7,102 @@ pub async fn generate_members_excel(
     model: Vec<MemberWithInterests>,
 ) -> Result<String, ServerFnError> {
     use base64::{engine::general_purpose::STANDARD, Engine as _};
+    use chrono::Datelike;
     use rust_xlsxwriter::*;
 
-    // Create a new Excel file object.
     let mut workbook = Workbook::new();
-
-    // Create some formats to use in the worksheet.
-    let bold_format = Format::new().set_bold();
-    let decimal_format = Format::new().set_num_format("0.000");
-    let date_format = Format::new().set_num_format("yyyy-mm-dd");
-    let merge_format = Format::new()
-        .set_border(FormatBorder::Thin)
-        .set_align(FormatAlign::Center);
-
-    // Add a worksheet to the workbook.
     let worksheet = workbook.add_worksheet();
 
-    // Set the column width for clarity.
-    worksheet.set_column_width(0, 22)?;
+    let bold_format = Format::new().set_bold();
+    let date_format = Format::new().set_num_format("dd/mm/yyyy");
+    let text_wrap_format = Format::new().set_text_wrap();
 
-    // Write a string without formatting.
-    worksheet.write(0, 0, "Hello")?;
+    let headers = vec![
+        "ID",
+        "Nombre",
+        "Primer Apellido",
+        "Segundo Apellido",
+        "Correo Electrónico",
+        "Fecha de Nacimiento",
+        "Teléfono",
+        "País",
+        "Género",
+        "Notas",
+        "Intereses",
+        "Creado en",
+        "Actualizado en",
+    ];
 
-    // Write a string with the bold format defined above.
-    worksheet.write_with_format(1, 0, "World", &bold_format)?;
+    for (col, header) in headers.iter().enumerate() {
+        worksheet.write_with_format(0, col as u16, *header, &bold_format)?;
+    }
 
-    // Write some numbers.
-    worksheet.write(2, 0, 1)?;
-    worksheet.write(3, 0, 2.34)?;
+    for (row_idx, member_with_interests) in model.iter().enumerate() {
+        let row = (row_idx + 1) as u32;
+        let m = &member_with_interests.member;
 
-    // Write a number with formatting.
-    worksheet.write_with_format(4, 0, 3.00, &decimal_format)?;
+        let interests_str = member_with_interests
+            .interests
+            .iter()
+            .map(|i| i.name.clone())
+            .collect::<Vec<String>>()
+            .join(", ");
 
-    // Write a formula.
-    worksheet.write(5, 0, Formula::new("=SIN(PI()/4)"))?;
+        worksheet.write(row, 0, m.id.unwrap_or_default())?;
+        worksheet.write(row, 1, &m.name)?;
+        worksheet.write(row, 2, &m.surname)?;
+        worksheet.write(row, 3, &m.second_surname)?;
+        worksheet.write(row, 4, &m.email)?;
 
-    // Write a date.
-    let date = ExcelDateTime::from_ymd(2023, 1, 25)?;
-    worksheet.write_with_format(6, 0, &date, &date_format)?;
+        if let Some(bd) = m.birthdate {
+            let excel_date = ExcelDateTime::from_ymd(
+                bd.year().try_into().unwrap_or_default(),
+                bd.month() as u8,
+                bd.day() as u8,
+            )?;
+            worksheet.write_with_format(row, 5, &excel_date, &date_format)?;
+        } else {
+            worksheet.write(row, 5, "")?;
+        }
 
-    // Write some links.
-    worksheet.write(7, 0, Url::new("https://www.rust-lang.org"))?;
-    worksheet.write(8, 0, Url::new("https://www.rust-lang.org").set_text("Rust"))?;
+        worksheet.write(row, 6, &m.phone)?;
+        worksheet.write(row, 7, m.country.to_string())?;
+        worksheet.write(row, 8, m.gender.to_string())?;
+        worksheet.write(row, 9, &m.notes)?;
+        worksheet.write_with_format(row, 10, &interests_str, &text_wrap_format)?;
 
-    // Write some merged cells.
-    worksheet.merge_range(9, 0, 9, 1, "Merged cells", &merge_format)?;
+        if let Some(created) = m.created_at {
+            let excel_date = ExcelDateTime::from_ymd(
+                created.year().try_into().unwrap_or_default(),
+                created.month() as u8,
+                created.day() as u8,
+            )?;
+            worksheet.write_with_format(row, 11, &excel_date, &date_format)?;
+        } else {
+            worksheet.write(row, 11, "")?;
+        }
 
-    let result = workbook.save_to_buffer();
-    match result {
+        // Updated_at
+        if let Some(updated) = m.updated_at {
+            let excel_date = ExcelDateTime::from_ymd(
+                updated.year().try_into().unwrap_or_default(),
+                updated.month() as u8,
+                updated.day() as u8,
+            )?;
+            worksheet.write_with_format(row, 12, &excel_date, &date_format)?;
+        } else {
+            worksheet.write(row, 12, "")?;
+        }
+    }
+
+    for col in 0..headers.len() {
+        worksheet.set_column_width(col as u16, 20)?;
+    }
+
+    match workbook.save_to_buffer() {
         Ok(bytes) => Ok(STANDARD.encode(&bytes)),
         Err(err) => {
-            eprintln!("{err}");
+            eprintln!("Error generating Excel: {err}");
             Err(ServerFnError::new(format!("Error: {err}")))
         }
     }
