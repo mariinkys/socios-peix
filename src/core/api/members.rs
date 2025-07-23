@@ -11,7 +11,7 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::models::{interest::Interest, member::Member};
+use crate::core::models::member::{Member, MemberWithInterests};
 
 #[server(GetTodayMembers, "/api/today-members")]
 pub async fn get_today_members() -> Result<Vec<Member>, ServerFnError> {
@@ -47,8 +47,7 @@ pub async fn get_all_members() -> Result<Vec<Member>, ServerFnError> {
 }
 
 #[server(AllMembersWithInterests, "/api/members-with-interests")]
-pub async fn get_all_members_with_interests() -> Result<Vec<(Member, Vec<Interest>)>, ServerFnError>
-{
+pub async fn get_all_members_with_interests() -> Result<Vec<MemberWithInterests>, ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
 
