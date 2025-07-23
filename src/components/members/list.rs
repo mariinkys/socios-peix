@@ -8,8 +8,8 @@ use crate::{
     },
     core::{
         api::{interests::get_all_interests, members::get_all_members_with_interests},
-        models::{interest::Interest, member::Member},
-        utils::{generate_members_excel, MembersExcelModel},
+        models::{interest::Interest, member::MemberWithInterests},
+        utils::generate_members_excel,
     },
 };
 
@@ -69,10 +69,12 @@ pub fn MembersList() -> impl IntoView {
                 Some(
                     members_list
                         .into_iter()
-                        .filter(|(member, interests)| {
+                        .filter(|member_with_interests| {
                             let full_name = format!(
                                 "{} {} {}",
-                                member.name, member.surname, member.second_surname
+                                member_with_interests.member.name,
+                                member_with_interests.member.surname,
+                                member_with_interests.member.second_surname
                             )
                             .to_lowercase();
 
@@ -80,17 +82,31 @@ pub fn MembersList() -> impl IntoView {
                                 true
                             } else {
                                 full_name.contains(&query)
-                                    || member.email.to_lowercase().contains(&query)
-                                    || member.country.to_string().to_lowercase().contains(&query)
-                                    || member.phone.to_string().to_lowercase().contains(&query)
+                                    || member_with_interests
+                                        .member
+                                        .email
+                                        .to_lowercase()
+                                        .contains(&query)
+                                    || member_with_interests
+                                        .member
+                                        .country
+                                        .to_string()
+                                        .to_lowercase()
+                                        .contains(&query)
+                                    || member_with_interests
+                                        .member
+                                        .phone
+                                        .to_string()
+                                        .to_lowercase()
+                                        .contains(&query)
                             };
 
                             let interest_ok = if selected_interests.is_empty() {
                                 true
                             } else {
-                                selected_interests
-                                    .iter()
-                                    .all(|selected| interests.contains(selected))
+                                selected_interests.iter().all(|selected| {
+                                    member_with_interests.interests.contains(selected)
+                                })
                             };
 
                             query_ok && interest_ok
@@ -103,18 +119,11 @@ pub fn MembersList() -> impl IntoView {
         }
     });
 
-    let export_excel_action = Action::new(move |model: &Option<Vec<(Member, Vec<Interest>)>>| {
+    let export_excel_action = Action::new(move |model: &Option<Vec<MemberWithInterests>>| {
         let current_model = model.clone();
         async move {
             if let Some(model) = current_model {
-                let mut data = vec![];
-                for m in model {
-                    data.push(MembersExcelModel {
-                        member: m.0,
-                        interests: m.1,
-                    })
-                }
-                let result = generate_members_excel(data).await;
+                let result = generate_members_excel(model).await;
 
                 match result {
                     Ok(base64_excel) => {
@@ -260,16 +269,16 @@ pub fn MembersList() -> impl IntoView {
                                                     </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <For each=move || filtered_members.get().unwrap_or_default() key=|(m, _)| m.id children=move |(m, _)| {
+                                                        <For each=move || filtered_members.get().unwrap_or_default() key=|m| m.member.id children=move |m| {
                                                             view! {
                                                                 <tr>
-                                                                    <th>{m.id.unwrap_or_default()}</th>
-                                                                    <td>{format!("{} {} {}", m.name, m.surname, m.second_surname)}</td>
-                                                                    <td>{m.email}</td>
-                                                                    <td>{m.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
-                                                                    <td>{m.gender.to_string()}</td>
-                                                                    <td>{m.country.to_string()}</td>
-                                                                    <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.id.unwrap_or_default())>"Ver"</a></td>
+                                                                    <th>{m.member.id.unwrap_or_default()}</th>
+                                                                    <td>{format!("{} {} {}", m.member.name, m.member.surname, m.member.second_surname)}</td>
+                                                                    <td>{m.member.email}</td>
+                                                                    <td>{m.member.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
+                                                                    <td>{m.member.gender.to_string()}</td>
+                                                                    <td>{m.member.country.to_string()}</td>
+                                                                    <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.member.id.unwrap_or_default())>"Ver"</a></td>
                                                                 </tr>
                                                             }
                                                         }/>

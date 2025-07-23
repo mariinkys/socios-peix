@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use crate::core::entities::{country::Country, gender::Gender};
-#[cfg(feature = "ssr")]
 use crate::core::models::interest::Interest;
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
@@ -33,6 +32,27 @@ impl std::fmt::Display for Member {
 impl PartialEq for Member {
     fn eq(&self, other: &Self) -> bool {
         self.id.is_some_and(|x| x == other.id.unwrap_or_default())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MemberWithInterests {
+    pub member: Member,
+    #[serde(default)]
+    pub interests: Vec<Interest>,
+}
+
+impl std::fmt::Display for MemberWithInterests {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.member.name)
+    }
+}
+
+impl PartialEq for MemberWithInterests {
+    fn eq(&self, other: &Self) -> bool {
+        self.member
+            .id
+            .is_some_and(|x| x == other.member.id.unwrap_or_default())
     }
 }
 
@@ -110,7 +130,7 @@ impl Member {
 
     pub async fn get_all_with_interests(
         pool: &Pool<Sqlite>,
-    ) -> Result<Vec<(Member, Vec<Interest>)>, sqlx::Error> {
+    ) -> Result<Vec<MemberWithInterests>, sqlx::Error> {
         let rows = sqlx::query(
             "SELECT 
                 id, 
@@ -131,7 +151,7 @@ impl Member {
         .fetch_all(pool)
         .await?;
 
-        let mut result = Vec::<(Member, Vec<Interest>)>::new();
+        let mut result = Vec::<MemberWithInterests>::new();
 
         for row in rows {
             let id: Option<i32> = row.try_get("id")?;
@@ -167,7 +187,7 @@ impl Member {
                 created_at,
                 updated_at,
             };
-            result.push((member, interests));
+            result.push(MemberWithInterests { member, interests });
         }
         Ok(result)
     }

@@ -1,18 +1,10 @@
 use leptos::prelude::*;
-use serde::{Deserialize, Serialize};
 
-use crate::core::models::{interest::Interest, member::Member};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MembersExcelModel {
-    pub member: Member,
-    #[serde(default)]
-    pub interests: Vec<Interest>,
-}
+use crate::core::models::member::MemberWithInterests;
 
 #[server(GenMembersExcel, "/api/generate/members-excel")]
 pub async fn generate_members_excel(
-    model: Vec<MembersExcelModel>,
+    model: Vec<MemberWithInterests>,
 ) -> Result<String, ServerFnError> {
     use base64::{engine::general_purpose::STANDARD, Engine as _};
     use rust_xlsxwriter::*;
