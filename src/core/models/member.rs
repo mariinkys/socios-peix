@@ -37,6 +37,7 @@ impl PartialEq for Member {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MemberWithInterests {
+    pub member_id: Option<i32>,
     pub member: Member,
     #[serde(default)]
     pub interests: Vec<Interest>,
@@ -187,7 +188,11 @@ impl Member {
                 created_at,
                 updated_at,
             };
-            result.push(MemberWithInterests { member, interests });
+            result.push(MemberWithInterests {
+                member_id: id,
+                member,
+                interests,
+            });
         }
         Ok(result)
     }

@@ -115,7 +115,7 @@ pub fn MembersList() -> impl IntoView {
                 )
             }
         } else {
-            None
+            Some(Vec::new())
         }
     });
 
@@ -250,44 +250,42 @@ pub fn MembersList() -> impl IntoView {
 
                         <Suspense fallback=|| view! { <p class="text-center">"Cargando socios..."</p> }>
                             { move || {
-                                filtered_members.get().map(|members_list|  {
-                                    if members_list.is_empty() {
-                                        view! { <p class="text-center mt-3">"No hay socios..."</p> }.into_any()
-                                    } else {
-                                        view! {
-                                            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
-                                                <table class="table">
-                                                    <thead>
-                                                    <tr>
-                                                        <th></th>
-                                                        <th>"Nombre Completo"</th>
-                                                        <th>"Email"</th>
-                                                        <th>"Fecha de Nacimiento"</th>
-                                                        <th>"Género"</th>
-                                                        <th>"País"</th>
-                                                        <th class="text-right">"Editar"</th>
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <For each=move || filtered_members.get().unwrap_or_default() key=|m| m.member.id children=move |m| {
-                                                            view! {
-                                                                <tr>
-                                                                    <th>{m.member.id.unwrap_or_default()}</th>
-                                                                    <td>{format!("{} {} {}", m.member.name, m.member.surname, m.member.second_surname)}</td>
-                                                                    <td>{m.member.email}</td>
-                                                                    <td>{m.member.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
-                                                                    <td>{m.member.gender.to_string()}</td>
-                                                                    <td>{m.member.country.to_string()}</td>
-                                                                    <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.member.id.unwrap_or_default())>"Ver"</a></td>
-                                                                </tr>
-                                                            }
-                                                        }/>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        }.into_any()
-                                    }
-                                })
+                                if filtered_members.get().is_some_and(|x| !x.is_empty()) {
+                                    view! {
+                                        <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
+                                            <table class="table">
+                                                <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>"Nombre Completo"</th>
+                                                    <th>"Email"</th>
+                                                    <th>"Fecha de Nacimiento"</th>
+                                                    <th>"Género"</th>
+                                                    <th>"País"</th>
+                                                    <th class="text-right">"Editar"</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <For each=move || filtered_members.get().unwrap_or_default() key=|m| m.member_id children=move |m| {
+                                                        view! {
+                                                            <tr>
+                                                                <th>{m.member_id.unwrap_or_default()}</th>
+                                                                <td>{format!("{} {} {}", m.member.name, m.member.surname, m.member.second_surname)}</td>
+                                                                <td>{m.member.email}</td>
+                                                                <td>{m.member.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
+                                                                <td>{m.member.gender.to_string()}</td>
+                                                                <td>{m.member.country.to_string()}</td>
+                                                                <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.member_id.unwrap_or_default())>"Ver"</a></td>
+                                                            </tr>
+                                                        }
+                                                    }/>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }.into_any()
+                                } else {
+                                    view! { <p class="text-center mt-3">"No hay socios..."</p> }.into_any()
+                                }
                             }}
                         </Suspense>
                     </div>
