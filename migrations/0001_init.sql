@@ -49,6 +49,16 @@ CREATE TABLE IF NOT EXISTS cupons (
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
+-- Migration 005: Create emails table
+CREATE TABLE IF NOT EXISTS emails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    to_member_id INTEGER NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (to_member_id) REFERENCES members(id) ON DELETE CASCADE
+);
+
 -- Create triggers for updated_at timestamps
 CREATE TRIGGER IF NOT EXISTS update_members_updated_at
     AFTER UPDATE ON members
