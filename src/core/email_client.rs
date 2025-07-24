@@ -1,6 +1,7 @@
 #[cfg(feature = "ssr")]
 use lettre::SmtpTransport;
 
+#[cfg(feature = "ssr")]
 #[derive(Debug, Clone)]
 pub struct EmailClient {
     pub mailer: SmtpTransport,
@@ -8,12 +9,13 @@ pub struct EmailClient {
     pub from_email: String,
 }
 
+#[cfg(feature = "ssr")]
 impl EmailClient {
     fn init(mailer: SmtpTransport) -> Self {
         Self {
             mailer,
-            from_name: String::from("My Sender Name"),
-            from_email: String::from("My Sender Email"),
+            from_name: String::from("Coco"),
+            from_email: String::from("newcocobberry@gmail.com"),
         }
     }
 }

@@ -1,4 +1,5 @@
 pub mod dialog;
+pub mod emails;
 pub mod interests;
 pub mod members;
 pub mod navbar;

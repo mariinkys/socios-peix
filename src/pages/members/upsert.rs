@@ -3,6 +3,7 @@ use leptos_router::{hooks::use_params, params::Params};
 
 use crate::{
     components::{
+        emails::member_emails::MemberEmails,
         interests::member_interests_upsert::MemberInterestsUpsert, members::upsert::UpsertMember,
         page_loading::PageLoadingComponent,
     },
@@ -67,6 +68,14 @@ pub fn UpsertMemberPage() -> impl IntoView {
                         fallback=|| view! { <p></p> }
                     >
                         <MemberInterestsUpsert edit_mode=edit_mode member_id=member_model.get_untracked().id.unwrap()/>
+                    </Show>
+                </div>
+                <div class="mt-2">
+                    <Show
+                        when=move || { member_model.get().id.is_some() }
+                        fallback=|| view! { <p></p> }
+                    >
+                        <MemberEmails edit_mode=edit_mode member_id=member_model.get_untracked().id.unwrap()/>
                     </Show>
                 </div>
             </ErrorBoundary>
