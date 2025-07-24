@@ -11,6 +11,7 @@ pub struct Email {
     pub to_member_id: i32,
     pub subject: String,
     pub body: String,
+    pub sent_success: bool,
     pub created_at: Option<NaiveDateTime>,
 }
 
@@ -42,7 +43,7 @@ impl Email {
         member_id: i32,
     ) -> Result<Vec<Email>, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT id, to_member_id, subject, body, created_at
+            "SELECT id, to_member_id, subject, body, sent_success, created_at
              FROM emails
              WHERE to_member_id = $1
              ORDER BY created_at DESC",
@@ -58,6 +59,7 @@ impl Email {
                 to_member_id: row.try_get("to_member_id")?,
                 subject: row.try_get("subject")?,
                 body: row.try_get("body")?,
+                sent_success: row.try_get("sent_success")?,
                 created_at: row.try_get("created_at")?,
             });
         }
@@ -68,7 +70,7 @@ impl Email {
     /// Get all emails
     pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Email>, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT id, to_member_id, subject, body, created_at
+            "SELECT id, to_member_id, subject, body, sent_success, created_at
              FROM emails
              ORDER BY created_at DESC",
         )
@@ -82,6 +84,7 @@ impl Email {
                 to_member_id: row.try_get("to_member_id")?,
                 subject: row.try_get("subject")?,
                 body: row.try_get("body")?,
+                sent_success: row.try_get("sent_success")?,
                 created_at: row.try_get("created_at")?,
             });
         }
@@ -92,7 +95,7 @@ impl Email {
     /// Get a single email by ID
     pub async fn get_single(pool: &Pool<Sqlite>, email_id: i32) -> Result<Email, sqlx::Error> {
         let row = sqlx::query(
-            "SELECT id, to_member_id, subject, body, created_at
+            "SELECT id, to_member_id, subject, body, sent_success, created_at
              FROM emails
              WHERE id = $1",
         )
@@ -105,6 +108,7 @@ impl Email {
             to_member_id: row.try_get("to_member_id")?,
             subject: row.try_get("subject")?,
             body: row.try_get("body")?,
+            sent_success: row.try_get("sent_success")?,
             created_at: row.try_get("created_at")?,
         })
     }
@@ -112,12 +116,13 @@ impl Email {
     /// Add a new email
     pub async fn add(pool: &Pool<Sqlite>, email: Email) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO emails (to_member_id, subject, body, created_at)
+            "INSERT INTO emails (to_member_id, subject, body, sent_success, created_at)
              VALUES ($1, $2, $3, CURRENT_TIMESTAMP)",
         )
         .bind(email.to_member_id)
         .bind(email.subject)
         .bind(email.body)
+        .bind(email.sent_success)
         .execute(pool)
         .await?;
 
@@ -130,6 +135,25 @@ impl Email {
             .bind(email_id)
             .execute(pool)
             .await?;
+
+        Ok(())
+    }
+
+    /// Change the sent_success of an existing email
+    pub async fn edit_sent_success(
+        pool: &Pool<Sqlite>,
+        email_id: Option<i32>,
+        sent_status: bool,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE emails
+             SET sent_success = $1
+             WHERE id = $2",
+        )
+        .bind(sent_status)
+        .bind(email_id)
+        .execute(pool)
+        .await?;
 
         Ok(())
     }
