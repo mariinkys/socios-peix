@@ -15,7 +15,7 @@ impl EmailClient {
         Self {
             mailer,
             from_name: String::from("Coco"),
-            from_email: String::from("newcocobberry@gmail.com"),
+            from_email: String::from("Email"),
         }
     }
 }
