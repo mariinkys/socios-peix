@@ -52,7 +52,7 @@ pub fn MembersList() -> impl IntoView {
         }
     });
 
-    let filtered_members = Memo::new(move |_| {
+    let filtered_members = move || {
         if let Some(Ok(members_list)) = members.get() {
             let query = search_query.get().to_lowercase();
             let selected_interests = selectable_interests.with(|interests| {
@@ -115,9 +115,9 @@ pub fn MembersList() -> impl IntoView {
                 )
             }
         } else {
-            Some(Vec::new())
+            None
         }
-    });
+    };
 
     let export_excel_action = Action::new(move |model: &Option<Vec<MemberWithInterests>>| {
         let current_model = model.clone();
@@ -215,7 +215,7 @@ pub fn MembersList() -> impl IntoView {
                                 <button
                                     class="btn btn-success"
                                     on:click=move |_| {
-                                        export_excel_action.dispatch(filtered_members.get_untracked());
+                                        export_excel_action.dispatch(filtered_members());
                                     }
                                 >"Exportar"</button>
                                 <a class="btn btn-primary" href="/members/new">"Añadir"</a>
@@ -248,45 +248,41 @@ pub fn MembersList() -> impl IntoView {
                             }
                         }/>
 
-                        { move || {
-                            if filtered_members.get().is_some_and(|x| !x.is_empty()) {
-                                view! {
-                                    <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
-                                        <table class="table">
-                                            <thead>
-                                            <tr>
-                                                <th></th>
-                                                <th>"Nombre Completo"</th>
-                                                <th>"Email"</th>
-                                                <th>"Fecha de Nacimiento"</th>
-                                                <th>"Género"</th>
-                                                <th>"País"</th>
-                                                <th class="text-right">"Editar"</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                                <For each=move || filtered_members.get_untracked().unwrap_or_default() key=|m| m.member_id children=move |m| {
-                                                    view! {
-                                                        <tr>
-                                                            <th>{m.member_id.unwrap_or_default()}</th>
-                                                            <td>{format!("{} {} {}", m.member.name, m.member.surname, m.member.second_surname)}</td>
-                                                            <td>{m.member.email}</td>
-                                                            <td>{m.member.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
-                                                            <td>{m.member.gender.to_string()}</td>
-                                                            <td>{m.member.country.to_string()}</td>
-                                                            <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.member_id.unwrap_or_default())>"Ver"</a></td>
-                                                        </tr>
-                                                    }
-                                                }/>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                }.into_any()
-                            } else {
-                                view! { <p class="text-center mt-3">"No hay socios..."</p> }.into_any()
-                            }
-                        }}
-
+                        <Show
+                            when=move || { filtered_members().is_some_and(|x| !x.is_empty())}
+                            fallback=|| view! { <p class="text-center">"No hay socios..."</p> }
+                        >
+                            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>"Nombre Completo"</th>
+                                        <th>"Email"</th>
+                                        <th>"Fecha de Nacimiento"</th>
+                                        <th>"Género"</th>
+                                        <th>"País"</th>
+                                        <th class="text-right">"Editar"</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                        <For each=move || filtered_members().unwrap_or_default() key=|m| m.member_id children=move |m| {
+                                            view! {
+                                                <tr>
+                                                    <th>{m.member_id.unwrap_or_default()}</th>
+                                                    <td>{format!("{} {} {}", m.member.name, m.member.surname, m.member.second_surname)}</td>
+                                                    <td>{m.member.email}</td>
+                                                    <td>{m.member.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
+                                                    <td>{m.member.gender.to_string()}</td>
+                                                    <td>{m.member.country.to_string()}</td>
+                                                    <td class="text-right"><a class="btn btn-primary" href=format!("/members/{}", m.member_id.unwrap_or_default())>"Ver"</a></td>
+                                                </tr>
+                                            }
+                                        }/>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </Show>
                     </div>
                 </div>
             </ErrorBoundary>
