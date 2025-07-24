@@ -31,6 +31,7 @@ wasm-bindgen-futures = "0.4.50"
 anyhow = "1.0.98"
 rust_xlsxwriter = { version = "0.89.1", optional = true }
 base64 = { version = "0.22.1", optional = true }
+lettre = { version = "0.11.17", optional = true }
 
 [features]
 csr = ["leptos/csr"]
@@ -48,6 +49,7 @@ ssr = [
   "dep:futures",
   "dep:rust_xlsxwriter",
   "dep:base64",
+  "dep:lettre",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

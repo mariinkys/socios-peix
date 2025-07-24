@@ -11,15 +11,22 @@ async fn main() -> std::io::Result<()> {
     use leptos::prelude::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_meta::MetaTags;
-    use socios_peix::{app::*, core::database::init_database};
+    use socios_peix::{
+        app::*, core::database::init_database, core::email_client::init_email_client,
+    };
 
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
 
     // Database
     // Ej: export DATABASE_URL="sqlite:socios.db"
-    let database_url = std::env::var("DATABASE_URL").expect("database URL must be set");
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = init_database(&database_url).await.unwrap();
+
+    // Email client
+    let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
+    let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
+    let email_client = init_email_client(&smtp_username, &smtp_password).unwrap();
 
     println!("listening on http://{}", &addr);
 
@@ -32,6 +39,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // database
             .app_data(web::Data::new(pool.clone()))
+            // email_client
+            .app_data(web::Data::new(email_client.clone()))
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
             // serve other assets from the `assets` directory

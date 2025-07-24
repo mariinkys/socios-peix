@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS emails (
     to_member_id INTEGER NOT NULL,
     subject TEXT NOT NULL,
     body TEXT NOT NULL,
-    sent_success BOOLEAN NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (to_member_id) REFERENCES members(id) ON DELETE CASCADE
 );
