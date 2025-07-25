@@ -250,7 +250,7 @@ pub fn MembersList() -> impl IntoView {
 
                         <Show
                             when=move || { filtered_members().is_some_and(|x| !x.is_empty())}
-                            fallback=|| view! { <p class="text-center">"No hay socios..."</p> }
+                            fallback=|| view! { <p class="text-center mt-3">"No hay socios..."</p> }
                         >
                             <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
                                 <table class="table">
