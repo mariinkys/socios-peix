@@ -11,9 +11,7 @@ async fn main() -> std::io::Result<()> {
     use leptos::prelude::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_meta::MetaTags;
-    use socios_peix::{
-        app::*, core::database::init_database, core::email_client::init_email_client,
-    };
+    use socios_peix::{app::*, core::database::init_database};
 
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
@@ -26,7 +24,8 @@ async fn main() -> std::io::Result<()> {
     // Email client
     let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
     let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
-    let email_client = init_email_client(&smtp_username, &smtp_password).unwrap();
+    let email_client: core::email_client::EmailClient =
+        core::email_client::init_email_client(&smtp_username, &smtp_password).unwrap();
 
     println!("listening on http://{}", &addr);
 
@@ -47,6 +46,7 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/assets", &site_root))
             // serve the favicon from /favicon.ico
             .service(favicon)
+            // .route("/test-extraction", web::get().to(test_email_extraction))
             .leptos_routes(routes, {
                 let leptos_options = leptos_options.clone();
                 move || {
@@ -106,3 +106,19 @@ pub fn main() {
 
     leptos::mount_to_body(App);
 }
+
+// async fn test_email_extraction(
+//     pool: actix_web::web::Data<sqlx::Pool<sqlx::Sqlite>>,
+//     email_client: actix_web::web::Data<core::email_client::EmailClient>,
+// ) -> Result<actix_web::HttpResponse, actix_web::Error> {
+//     println!(
+//         "Database extraction: SUCCESS - {:?}",
+//         std::any::type_name::<sqlx::Pool<sqlx::Sqlite>>()
+//     );
+//     println!(
+//         "EmailClient extraction: SUCCESS - {:?}",
+//         std::any::type_name::<core::email_client::EmailClient>()
+//     );
+
+//     Ok(actix_web::HttpResponse::Ok().json("Both extractions successful"))
+// }
