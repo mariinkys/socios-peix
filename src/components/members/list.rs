@@ -232,37 +232,31 @@ pub fn MembersList() -> impl IntoView {
             }>
                 <div class="card card-border bg-base-200 w-full">
                     <div class="card-body">
-                        <div class="flex justify-between gap-2">
+                        <div class="flex flex-col md:flex-row md:justify-between gap-4 md:gap-2">
                             <h2 class="card-title">"Todos los Socios"</h2>
-                            <label class="input">
-                                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <g
-                                    stroke-linejoin="round"
-                                    stroke-linecap="round"
-                                    stroke-width="2.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    >
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="m21 21-4.3-4.3"></path>
+
+                            <label class="input w-full md:w-auto flex items-center">
+                                <svg class="h-[1em] opacity-50 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <path d="m21 21-4.3-4.3"></path>
                                     </g>
                                 </svg>
                                 <input type="search" class="grow" placeholder="Buscar"
                                     on:input:target=move |ev| {
                                         search_bar.set(ev.target().value());
                                     }
-                                    prop:value=search_bar/>
+                                    prop:value=search_bar />
                             </label>
-                            <div class="flex gap-2">
-                                <button
-                                    class="btn btn-success"
+
+                            <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                                <button class="btn btn-success"
                                     on:click=move |_| {
                                         export_excel_action.dispatch(filtered_members());
                                     }
-                                >"Exportar"</button>
+                                >Exportar</button>
                                 <a class="btn btn-primary" href="/members/new">"Añadir"</a>
-                                <button
-                                    class="btn btn-accent"
+                                <button class="btn btn-accent"
                                     on:click=move |_| {
                                         let _ = interest_filter_dialog_ref_node.get().unwrap().show_modal();
                                     }

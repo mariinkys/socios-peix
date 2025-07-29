@@ -15,13 +15,17 @@ pub fn InterestsList() -> impl IntoView {
             }>
                 <div class="card card-border bg-base-200 w-full">
                     <div class="card-body">
-                        <div class="flex gap-1">
+                        <div class="flex flex-col md:flex-row gap-3 md:gap-1">
                             <h2 class="card-title grow">"Todos los Intereses"</h2>
-                            <a class="btn btn-primary" href="/interests/new">"Añadir Interés"</a>
+
+                            <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                                <a class="btn btn-primary" href="/interests/new">"Añadir Interés"</a>
+                            </div>
                         </div>
+
                         <Show
                             when=move || { interests.get().is_some_and(|x| x.is_ok_and(|y| !y.is_empty()))}
-                            fallback=|| view! { <p class="text-center">"No hay intereses..."</p> }
+                            fallback=|| view! { <p class="text-center mt-3">"No hay intereses..."</p> }
                         >
                             <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
                                 <table class="table">
