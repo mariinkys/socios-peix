@@ -373,7 +373,9 @@ pub fn MembersList() -> impl IntoView {
                                         view! {
                                             <div class="flex gap-1">
                                                 {prev_button}
-                                                {page_buttons.into_iter().collect_view()}
+                                                <div>
+                                                    {page_buttons.into_iter().collect_view()}
+                                                </div>
                                                 {next_button}
                                             </div>
                                         }
