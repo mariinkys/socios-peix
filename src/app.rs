@@ -1,8 +1,9 @@
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, Stylesheet, Title};
+use leptos_meta::{Stylesheet, Title, provide_meta_context};
 use leptos_router::{
+    WildcardSegment,
     components::{Route, Router, Routes},
-    path, WildcardSegment,
+    path,
 };
 
 use crate::{
@@ -10,6 +11,7 @@ use crate::{
     pages::{
         home::HomePage,
         interests::{list::InterestsPage, upsert::UpsertInterestPage},
+        management::ManagementPage,
         members::{list::MembersPage, upsert::UpsertMemberPage},
     },
 };
@@ -39,6 +41,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/members/:id") view=UpsertMemberPage/>
                     <Route path=path!("/interests") view=InterestsPage/>
                     <Route path=path!("/interests/:id") view=UpsertInterestPage/>
+                    <Route path=path!("/management") view=ManagementPage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
                 </Routes>
             </main>
