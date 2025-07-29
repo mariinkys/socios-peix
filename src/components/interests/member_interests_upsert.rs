@@ -7,7 +7,7 @@ use crate::{
         toast::{ToastMessage, ToastType},
     },
     core::api::interests::{
-        get_all_interests, get_member_interests, AddMemberInterest, RemoveMemberInterest,
+        AddMemberInterest, RemoveMemberInterest, get_all_interests, get_member_interests,
     },
 };
 
@@ -22,6 +22,7 @@ pub fn MemberInterestsUpsert(edit_mode: RwSignal<bool>, member_id: i32) -> impl 
     );
     let selected_add_interest_id = RwSignal::new(0);
     Effect::new(move |_| {
+        #[allow(clippy::collapsible_if)]
         if let Some(Ok(interests)) = all_interests.get() {
             if !interests.is_empty() {
                 selected_add_interest_id.set(interests.first().unwrap().id.unwrap_or_default())
