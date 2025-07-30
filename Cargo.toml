@@ -1,7 +1,7 @@
 [package]
 name = "socios-peix"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -11,10 +11,10 @@ actix-files = { version = "0.6", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
 console_error_panic_hook = "0.1"
 http = { version = "1.3.1", optional = true }
-leptos = { version = "0.8.3", features = ["nightly"] }
-leptos_meta = { version = "0.8.3" }
-leptos_actix = { version = "0.8.3", optional = true }
-leptos_router = { version = "0.8.3", features = ["nightly"] }
+leptos = { version = "0.8.5", features = ["nightly"] }
+leptos_meta = { version = "0.8.5" }
+leptos_actix = { version = "0.8.5", optional = true }
+leptos_router = { version = "0.8.5", features = ["nightly"] }
 wasm-bindgen = "=0.2.100"
 
 # Added by me
@@ -31,6 +31,11 @@ wasm-bindgen-futures = "0.4.50"
 anyhow = "1.0.98"
 rust_xlsxwriter = { version = "0.89.1", optional = true }
 base64 = { version = "0.22.1", optional = true }
+lettre = { version = "0.11.18", optional = true }
+
+[dependencies.web-sys]
+version = "0.3"
+features = ["Window", "MediaQueryList"]
 
 [features]
 csr = ["leptos/csr"]
@@ -48,6 +53,7 @@ ssr = [
   "dep:futures",
   "dep:rust_xlsxwriter",
   "dep:base64",
+  "dep:lettre",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

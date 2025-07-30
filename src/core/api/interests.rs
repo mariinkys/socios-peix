@@ -114,3 +114,19 @@ pub async fn remove_memeber_interest(
         }
     }
 }
+
+#[server(DeleteInterest, "/api/interest/delete")]
+pub async fn delete_interest(interest_id: i32) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = Interest::delete(&pool, interest_id).await;
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to delete interest: {}", e);
+            Err(ServerFnError::new("Failed to delete interest"))
+        }
+    }
+}

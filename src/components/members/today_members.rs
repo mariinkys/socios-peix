@@ -15,18 +15,22 @@ pub fn TodayMembers() -> impl IntoView {
             }>
                 <div class="card card-border bg-base-200 w-full">
                     <div class="card-body">
-                        <div class="flex gap-1">
+                        <div class="flex flex-col md:flex-row gap-3 md:gap-1">
                             <h2 class="card-title grow">"Socios destacados hoy"</h2>
-                            <button class="btn btn-warning"
-                                on:click=move |_| today_members.refetch()
-                            >
-                                "Recargar"
-                            </button>
-                            <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
+
+                            <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                                <button class="btn btn-warning"
+                                    on:click=move |_| today_members.refetch()
+                                >
+                                    "Recargar"
+                                </button>
+                                <a class="btn btn-primary" href="/members/new">"Añadir Socio"</a>
+                            </div>
                         </div>
+
                         <Show
                             when=move || { today_members.get().is_some_and(|x| x.is_ok_and(|y| !y.is_empty()))}
-                            fallback=|| view! { <p class="text-center">"No hay socios..."</p> }
+                            fallback=|| view! { <p class="text-center mt-3">"No hay socios..."</p> }
                         >
                             <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
                                 <table class="table">

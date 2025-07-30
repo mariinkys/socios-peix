@@ -1,12 +1,22 @@
 use leptos::prelude::*;
-use leptos_router::{hooks::use_params, params::Params};
+use leptos_router::{
+    hooks::{use_navigate, use_params},
+    params::Params,
+};
 
 use crate::{
     components::{
-        interests::member_interests_upsert::MemberInterestsUpsert, members::upsert::UpsertMember,
+        dialog::DialogComponent,
+        emails::member_emails::MemberEmails,
+        interests::member_interests_upsert::MemberInterestsUpsert,
+        members::upsert::UpsertMember,
         page_loading::PageLoadingComponent,
+        toast::{ToastMessage, ToastType},
     },
-    core::{api::members::get_member, models::member::Member},
+    core::{
+        api::members::{DeleteMember, get_member},
+        models::member::Member,
+    },
 };
 
 #[derive(Params, PartialEq)]
@@ -17,6 +27,7 @@ struct MemberParams {
 #[component]
 pub fn UpsertMemberPage() -> impl IntoView {
     let params = use_params::<MemberParams>();
+    let set_toast: WriteSignal<ToastMessage> = expect_context();
 
     let member_model = RwSignal::new(Member::default());
     let edit_mode = RwSignal::new(false);
@@ -43,6 +54,32 @@ pub fn UpsertMemberPage() -> impl IntoView {
         }
     });
 
+    let delete_dialog_ref_node: NodeRef<leptos::html::Dialog> = NodeRef::new();
+    let delete_action = ServerAction::<DeleteMember>::new();
+    let delete_value = delete_action.value();
+    Effect::new(move |_| {
+        if let Some(val) = delete_value.get() {
+            match val {
+                Ok(_) => {
+                    let navigate = use_navigate();
+                    set_toast.set(ToastMessage {
+                        message: String::from("Eliminado"),
+                        toast_type: ToastType::Success,
+                        visible: true,
+                    });
+                    navigate("/members", Default::default());
+                }
+                Err(err) => {
+                    set_toast.set(ToastMessage {
+                        message: format!("Error: {err}"),
+                        toast_type: ToastType::Error,
+                        visible: true,
+                    });
+                }
+            }
+        }
+    });
+
     view! {
         <Suspense fallback=move || view! { <PageLoadingComponent/> }>
             <ErrorBoundary fallback=|error| view! {
@@ -58,7 +95,32 @@ pub fn UpsertMemberPage() -> impl IntoView {
                     >
                         "Editar"
                     </button>
+                    <button
+                        class="btn btn-error"
+                        disabled=move || member_model.get().id.is_none()
+                        on:click=move |_| {
+                            let _ = delete_dialog_ref_node.get().unwrap().show_modal();
+                    }>
+                        "Eliminar"
+                    </button>
                 </div>
+
+                <DialogComponent dialog_title="Eliminar Socio" dialog_node_ref=delete_dialog_ref_node dialog_content=move || {
+                    view! {
+                        <div>
+                            <p class="text-center font-bold text-xl text-error">"Seguro que quieres eliminar a este socio?"</p>
+                            <p class="text-center font-bold text-xl text-error">"Esta acción es irreversible"</p>
+                        </div>
+
+                        <button class="btn btn-error w-full"
+                            on:click=move |_| {
+                                if let Some(member_id) = member_model.get().id {
+                                    delete_action.dispatch(DeleteMember { member_id });
+                                }
+                        }>
+                        "Delete"</button>
+                    }
+                }/>
 
                 <div class="flex flex-col md:flex-row w-full gap-2 h-full md:h-[80vh]">
                     <UpsertMember edit_mode=edit_mode model=member_model/>
@@ -67,6 +129,14 @@ pub fn UpsertMemberPage() -> impl IntoView {
                         fallback=|| view! { <p></p> }
                     >
                         <MemberInterestsUpsert edit_mode=edit_mode member_id=member_model.get_untracked().id.unwrap()/>
+                    </Show>
+                </div>
+                <div class="mt-2">
+                    <Show
+                        when=move || { member_model.get().id.is_some() }
+                        fallback=|| view! { <p></p> }
+                    >
+                        <MemberEmails edit_mode=edit_mode member_id=member_model.get_untracked().id.unwrap()/>
                     </Show>
                 </div>
             </ErrorBoundary>

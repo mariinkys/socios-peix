@@ -8,16 +8,10 @@ use crate::{
     },
     core::{
         api::{interests::get_all_interests, members::get_all_members_with_interests},
-        models::{interest::Interest, member::MemberWithInterests},
-        utils::generate_members_excel,
+        models::member::MemberWithInterests,
+        utils::{LeptosSelectableInterest, generate_members_excel},
     },
 };
-
-#[derive(Debug, Clone)]
-struct LeptosSelectableInterest {
-    interest: Interest,
-    selected: RwSignal<bool>,
-}
 
 #[component]
 pub fn MembersList() -> impl IntoView {
@@ -119,6 +113,48 @@ pub fn MembersList() -> impl IntoView {
         }
     };
 
+    let current_page = RwSignal::new(1usize);
+    let items_per_page = RwSignal::new(10usize);
+    // Reset to page 1 when filters change
+    Effect::new(move |_| {
+        search_query.track();
+        selectable_interests.track();
+        current_page.set(1);
+    });
+    let paginated_members = move || {
+        if let Some(members_list) = filtered_members() {
+            let page = current_page.get();
+            let per_page = items_per_page.get();
+            let start_idx = (page - 1) * per_page;
+
+            Some(
+                members_list
+                    .into_iter()
+                    .skip(start_idx)
+                    .take(per_page)
+                    .collect::<Vec<_>>(),
+            )
+        } else {
+            None
+        }
+    };
+    let pagination_info = move || {
+        if let Some(members_list) = filtered_members() {
+            let total_items = members_list.len();
+            let per_page = items_per_page.get();
+            let total_pages = if total_items == 0 {
+                1
+            } else {
+                total_items.div_ceil(per_page)
+            };
+            let current = current_page.get();
+
+            (total_items, total_pages, current, per_page)
+        } else {
+            (0, 1, 1, items_per_page.get())
+        }
+    };
+
     let export_excel_action = Action::new(move |model: &Option<Vec<MemberWithInterests>>| {
         let current_model = model.clone();
         async move {
@@ -190,37 +226,31 @@ pub fn MembersList() -> impl IntoView {
             }>
                 <div class="card card-border bg-base-200 w-full">
                     <div class="card-body">
-                        <div class="flex justify-between gap-2">
+                        <div class="flex flex-col md:flex-row md:justify-between gap-4 md:gap-2">
                             <h2 class="card-title">"Todos los Socios"</h2>
-                            <label class="input">
-                                <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                    <g
-                                    stroke-linejoin="round"
-                                    stroke-linecap="round"
-                                    stroke-width="2.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    >
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="m21 21-4.3-4.3"></path>
+
+                            <label class="input w-full md:w-auto flex items-center">
+                                <svg class="h-[1em] opacity-50 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <path d="m21 21-4.3-4.3"></path>
                                     </g>
                                 </svg>
                                 <input type="search" class="grow" placeholder="Buscar"
                                     on:input:target=move |ev| {
                                         search_bar.set(ev.target().value());
                                     }
-                                    prop:value=search_bar/>
+                                    prop:value=search_bar />
                             </label>
-                            <div class="flex gap-2">
-                                <button
-                                    class="btn btn-success"
+
+                            <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                                <button class="btn btn-success"
                                     on:click=move |_| {
                                         export_excel_action.dispatch(filtered_members());
                                     }
-                                >"Exportar"</button>
+                                >Exportar</button>
                                 <a class="btn btn-primary" href="/members/new">"Añadir"</a>
-                                <button
-                                    class="btn btn-accent"
+                                <button class="btn btn-accent"
                                     on:click=move |_| {
                                         let _ = interest_filter_dialog_ref_node.get().unwrap().show_modal();
                                     }
@@ -249,8 +279,8 @@ pub fn MembersList() -> impl IntoView {
                         }/>
 
                         <Show
-                            when=move || { filtered_members().is_some_and(|x| !x.is_empty())}
-                            fallback=|| view! { <p class="text-center">"No hay socios..."</p> }
+                            when=move || { paginated_members().is_some_and(|x| !x.is_empty())}
+                            fallback=|| view! { <p class="text-center mt-3">"No hay socios..."</p> }
                         >
                             <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
                                 <table class="table">
@@ -266,7 +296,7 @@ pub fn MembersList() -> impl IntoView {
                                     </tr>
                                     </thead>
                                     <tbody>
-                                        <For each=move || filtered_members().unwrap_or_default() key=|m| m.member_id children=move |m| {
+                                        <For each=move || paginated_members().unwrap_or_default() key=|m| m.member_id children=move |m| {
                                             view! {
                                                 <tr>
                                                     <th>{m.member_id.unwrap_or_default()}</th>
@@ -281,6 +311,70 @@ pub fn MembersList() -> impl IntoView {
                                         }/>
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <div class="flex justify-center mt-4">
+                                <div class="join">
+                                    {move || {
+                                        let (_, total_pages, current, _) = pagination_info();
+
+                                        let prev_disabled = current <= 1;
+                                        let prev_button = view! {
+                                            <button class="join-item btn"
+                                                class:btn-disabled=prev_disabled
+                                                on:click=move |_| {
+                                                    if current > 1 {
+                                                        current_page.set(current - 1);
+                                                    }
+                                                }
+                                            >"«"</button>
+                                        };
+
+                                        // Page numbers
+                                        let mut page_buttons = Vec::new();
+                                        let start_page = if current <= 3 { 1 } else { current - 2 };
+                                        let end_page = std::cmp::min(start_page + 4, total_pages);
+                                        let actual_start = if end_page - start_page < 4 && end_page >= 5 {
+                                            std::cmp::max(1, end_page - 4)
+                                        } else {
+                                            start_page
+                                        };
+
+                                        for page in actual_start..=end_page {
+                                            let is_current = page == current;
+                                            page_buttons.push(view! {
+                                                <button class="join-item btn"
+                                                    class:btn-active=is_current
+                                                    on:click=move |_| {
+                                                        current_page.set(page);
+                                                    }
+                                                >{page}</button>
+                                            });
+                                        }
+
+                                        let next_disabled = current >= total_pages;
+                                        let next_button = view! {
+                                            <button class="join-item btn"
+                                                class:btn-disabled=next_disabled
+                                                on:click=move |_| {
+                                                    if current < total_pages {
+                                                        current_page.set(current + 1);
+                                                    }
+                                                }
+                                            >"»"</button>
+                                        };
+
+                                        view! {
+                                            <div class="flex gap-1">
+                                                {prev_button}
+                                                <div>
+                                                    {page_buttons.into_iter().collect_view()}
+                                                </div>
+                                                {next_button}
+                                            </div>
+                                        }
+                                    }}
+                                </div>
                             </div>
                         </Show>
                     </div>

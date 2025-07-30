@@ -1,9 +1,20 @@
 use leptos::prelude::*;
-use leptos_router::{hooks::use_params, params::Params};
+use leptos_router::{
+    hooks::{use_navigate, use_params},
+    params::Params,
+};
 
 use crate::{
-    components::{interests::upsert::UpsertInterest, page_loading::PageLoadingComponent},
-    core::{api::interests::get_interest, models::interest::Interest},
+    components::{
+        dialog::DialogComponent,
+        interests::upsert::UpsertInterest,
+        page_loading::PageLoadingComponent,
+        toast::{ToastMessage, ToastType},
+    },
+    core::{
+        api::interests::{DeleteInterest, get_interest},
+        models::interest::Interest,
+    },
 };
 
 #[derive(Params, PartialEq)]
@@ -14,6 +25,7 @@ struct InterestParams {
 #[component]
 pub fn UpsertInterestPage() -> impl IntoView {
     let params = use_params::<InterestParams>();
+    let set_toast: WriteSignal<ToastMessage> = expect_context();
 
     let interest_model = RwSignal::new(Interest::default());
     let edit_mode = RwSignal::new(false);
@@ -40,6 +52,32 @@ pub fn UpsertInterestPage() -> impl IntoView {
         }
     });
 
+    let delete_dialog_ref_node: NodeRef<leptos::html::Dialog> = NodeRef::new();
+    let delete_action = ServerAction::<DeleteInterest>::new();
+    let delete_value = delete_action.value();
+    Effect::new(move |_| {
+        if let Some(val) = delete_value.get() {
+            match val {
+                Ok(_) => {
+                    let navigate = use_navigate();
+                    set_toast.set(ToastMessage {
+                        message: String::from("Eliminado"),
+                        toast_type: ToastType::Success,
+                        visible: true,
+                    });
+                    navigate("/interests", Default::default());
+                }
+                Err(err) => {
+                    set_toast.set(ToastMessage {
+                        message: format!("Error: {err}"),
+                        toast_type: ToastType::Error,
+                        visible: true,
+                    });
+                }
+            }
+        }
+    });
+
     view! {
         <Suspense fallback=move || view! { <PageLoadingComponent/> }>
             <ErrorBoundary fallback=|error| view! {
@@ -56,7 +94,32 @@ pub fn UpsertInterestPage() -> impl IntoView {
                     >
                         "Editar"
                     </button>
+                    <button
+                        class="btn btn-error"
+                        disabled=move || interest_model.get().id.is_none()
+                        on:click=move |_| {
+                            let _ = delete_dialog_ref_node.get().unwrap().show_modal();
+                    }>
+                        "Eliminar"
+                    </button>
                 </div>
+
+                <DialogComponent dialog_title="Eliminar Interés" dialog_node_ref=delete_dialog_ref_node dialog_content=move || {
+                    view! {
+                        <div>
+                            <p class="text-center font-bold text-xl text-error">"Seguro que quieres eliminar este interés?"</p>
+                            <p class="text-center font-bold text-xl text-error">"Esta acción es irreversible"</p>
+                        </div>
+
+                        <button class="btn btn-error w-full"
+                            on:click=move |_| {
+                                if let Some(interest_id) = interest_model.get().id {
+                                    delete_action.dispatch(DeleteInterest { interest_id });
+                                }
+                        }>
+                        "Delete"</button>
+                    }
+                }/>
 
                 <UpsertInterest edit_mode=edit_mode model=interest_model/>
             </ErrorBoundary>

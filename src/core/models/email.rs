@@ -1,9 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+#[cfg(feature = "ssr")]
+use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Pool, Row, Sqlite};
+
+#[cfg(feature = "ssr")]
+use crate::core::email_client::EmailClient;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TodayEmail {
+    pub id: i32,
+    pub member_id: i32,
+    pub member_full_name: String,
+    pub subject: String,
+    pub body: String,
+    pub created_at: Option<NaiveDateTime>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Email {
@@ -11,7 +26,6 @@ pub struct Email {
     pub to_member_id: i32,
     pub subject: String,
     pub body: String,
-    pub sent_success: bool,
     pub created_at: Option<NaiveDateTime>,
 }
 
@@ -43,7 +57,7 @@ impl Email {
         member_id: i32,
     ) -> Result<Vec<Email>, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT id, to_member_id, subject, body, sent_success, created_at
+            "SELECT id, to_member_id, subject, body, created_at
              FROM emails
              WHERE to_member_id = $1
              ORDER BY created_at DESC",
@@ -59,7 +73,6 @@ impl Email {
                 to_member_id: row.try_get("to_member_id")?,
                 subject: row.try_get("subject")?,
                 body: row.try_get("body")?,
-                sent_success: row.try_get("sent_success")?,
                 created_at: row.try_get("created_at")?,
             });
         }
@@ -70,7 +83,7 @@ impl Email {
     /// Get all emails
     pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Email>, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT id, to_member_id, subject, body, sent_success, created_at
+            "SELECT id, to_member_id, subject, body, created_at
              FROM emails
              ORDER BY created_at DESC",
         )
@@ -84,7 +97,6 @@ impl Email {
                 to_member_id: row.try_get("to_member_id")?,
                 subject: row.try_get("subject")?,
                 body: row.try_get("body")?,
-                sent_success: row.try_get("sent_success")?,
                 created_at: row.try_get("created_at")?,
             });
         }
@@ -95,7 +107,7 @@ impl Email {
     /// Get a single email by ID
     pub async fn get_single(pool: &Pool<Sqlite>, email_id: i32) -> Result<Email, sqlx::Error> {
         let row = sqlx::query(
-            "SELECT id, to_member_id, subject, body, sent_success, created_at
+            "SELECT id, to_member_id, subject, body, created_at
              FROM emails
              WHERE id = $1",
         )
@@ -108,7 +120,6 @@ impl Email {
             to_member_id: row.try_get("to_member_id")?,
             subject: row.try_get("subject")?,
             body: row.try_get("body")?,
-            sent_success: row.try_get("sent_success")?,
             created_at: row.try_get("created_at")?,
         })
     }
@@ -116,13 +127,12 @@ impl Email {
     /// Add a new email
     pub async fn add(pool: &Pool<Sqlite>, email: Email) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO emails (to_member_id, subject, body, sent_success, created_at)
+            "INSERT INTO emails (to_member_id, subject, body, created_at)
              VALUES ($1, $2, $3, CURRENT_TIMESTAMP)",
         )
         .bind(email.to_member_id)
         .bind(email.subject)
         .bind(email.body)
-        .bind(email.sent_success)
         .execute(pool)
         .await?;
 
@@ -139,22 +149,121 @@ impl Email {
         Ok(())
     }
 
-    /// Change the sent_success of an existing email
-    pub async fn edit_sent_success(
+    /// Attempts to send an email to a specific member
+    pub async fn send_single(
         pool: &Pool<Sqlite>,
-        email_id: Option<i32>,
-        sent_status: bool,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE emails
-             SET sent_success = $1
-             WHERE id = $2",
+        email_client: &EmailClient,
+        member_id: i32,
+        subject: String,
+        body: String,
+    ) -> Result<(), anyhow::Error> {
+        use crate::core::models::member::Member;
+        use anyhow::{Context, anyhow};
+        use lettre::Transport;
+        use lettre::message::{Mailbox, header::ContentType};
+
+        // Get member with proper error handling
+        let member = Member::get_single(pool, member_id)
+            .await
+            .with_context(|| format!("Failed to fetch member with ID: {member_id}"))?;
+
+        // Validate email address is not empty
+        if member.email.is_empty() {
+            return Err(anyhow!("Member {} has no email address", member_id));
+        }
+
+        // Parse email addresses with proper error handling
+        let from_email = email_client
+            .from_email
+            .parse()
+            .with_context(|| format!("Invalid from email address: {}", email_client.from_email))?;
+
+        let to_email = member
+            .email
+            .parse()
+            .with_context(|| format!("Invalid member email address: {}", member.email))?;
+
+        // Build email message
+        let email = lettre::Message::builder()
+            .from(Mailbox::new(
+                Some(email_client.from_name.clone()),
+                from_email,
+            ))
+            .to(Mailbox::new(Some(member.to_string()), to_email))
+            .subject(&subject)
+            .header(ContentType::TEXT_PLAIN)
+            .body(body.clone())
+            .with_context(|| "Failed to build email message")?;
+
+        // Send email
+        email_client.mailer.send(&email).with_context(|| {
+            format!("Failed to send email to member {member_id} (mailer error)")
+        })?;
+
+        // Record email in database
+        Email::add(
+            pool,
+            Email {
+                id: None,
+                to_member_id: member_id,
+                subject,
+                body,
+                created_at: None,
+            },
         )
-        .bind(sent_status)
-        .bind(email_id)
-        .execute(pool)
-        .await?;
+        .await
+        .with_context(|| "Failed to record email in database")?;
 
         Ok(())
+    }
+
+    // Gets all emails that have been sent today
+    pub async fn get_today_emails(
+        pool: &Pool<Sqlite>,
+        today: NaiveDate,
+    ) -> Result<Vec<TodayEmail>, sqlx::Error> {
+        use chrono::Datelike;
+
+        let today_day = today.day();
+        let today_month = today.month();
+        let today_year = today.year();
+
+        let rows = sqlx::query(
+        "SELECT 
+            e.id,
+            e.to_member_id,
+            COALESCE(m.name || ' ' || m.surname || 
+                CASE WHEN m.second_surname != '' THEN ' ' || m.second_surname ELSE '' END, '') as member_full_name,
+            e.subject,
+            e.body,
+            e.created_at
+        FROM emails e
+        LEFT JOIN members m ON e.to_member_id = m.id
+        WHERE CAST(strftime('%d', e.created_at) AS INTEGER) = $1
+            AND CAST(strftime('%m', e.created_at) AS INTEGER) = $2
+            AND CAST(strftime('%Y', e.created_at) AS INTEGER) = $3
+        ORDER BY e.created_at DESC",
+    )
+    .bind(today_day as i32)
+    .bind(today_month as i32)
+    .bind(today_year)
+    .fetch_all(pool)
+    .await?;
+
+        let mut result = Vec::<TodayEmail>::new();
+
+        for row in rows {
+            let today_email = TodayEmail {
+                id: row.try_get("id")?,
+                member_id: row.try_get("to_member_id")?,
+                member_full_name: row.try_get("member_full_name")?,
+                subject: row.try_get("subject")?,
+                body: row.try_get("body")?,
+                created_at: row.try_get("created_at")?,
+            };
+            result.push(today_email);
+        }
+
+        Ok(result)
     }
 }

@@ -71,10 +71,9 @@ pub fn DialogComponent(
                     "X"
                 </button>
             </div>
-            <br/>
-
-            {dialog_content.run()}
-
+            <div class="mt-1">
+                {dialog_content.run()}
+            </div>
           </div>
         </dialog>
     }

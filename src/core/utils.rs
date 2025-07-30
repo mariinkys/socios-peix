@@ -1,12 +1,18 @@
 use leptos::prelude::*;
 
-use crate::core::models::member::MemberWithInterests;
+use crate::core::models::{interest::Interest, member::MemberWithInterests};
+
+#[derive(Debug, Clone)]
+pub struct LeptosSelectableInterest {
+    pub interest: Interest,
+    pub selected: RwSignal<bool>,
+}
 
 #[server(GenMembersExcel, "/api/generate/members-excel")]
 pub async fn generate_members_excel(
     model: Vec<MemberWithInterests>,
 ) -> Result<String, ServerFnError> {
-    use base64::{engine::general_purpose::STANDARD, Engine as _};
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
     use chrono::Datelike;
     use rust_xlsxwriter::*;
 

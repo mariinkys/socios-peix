@@ -10,7 +10,6 @@ pub struct Interest {
     pub id: Option<i32>,
     pub name: String,
     pub description: String,
-    pub is_deleted: bool,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
 }
@@ -53,14 +52,12 @@ impl Interest {
                     interests.id,
                     interests.name,
                     interests.description,
-                    interests.is_deleted,
                     interests.created_at,
                     interests.updated_at
                 FROM interests
                 INNER JOIN member_interests 
                     ON interests.id = member_interests.interest_id
                 WHERE member_interests.member_id = $1
-                AND interests.is_deleted = 0
                 ORDER BY interests.name",
         )
         .bind(member_id)
@@ -74,7 +71,6 @@ impl Interest {
                 id: row.try_get("id")?,
                 name: row.try_get("name")?,
                 description: row.try_get("description").unwrap_or_default(),
-                is_deleted: row.try_get("is_deleted")?,
                 created_at: row.try_get("created_at")?,
                 updated_at: row.try_get("updated_at")?,
             };
@@ -124,11 +120,9 @@ impl Interest {
             id, 
             name,
             description,
-            is_deleted,
             created_at, 
             updated_at
         FROM interests 
-        WHERE is_deleted = false
         ORDER BY id ASC",
         )
         .fetch_all(pool)
@@ -140,7 +134,6 @@ impl Interest {
             let id: Option<i32> = row.try_get("id")?;
             let name: String = row.try_get("name")?;
             let description: String = row.try_get("description")?;
-            let is_deleted: bool = row.try_get("is_deleted")?;
             let created_at: Option<NaiveDateTime> = row.try_get("created_at")?;
             let updated_at: Option<NaiveDateTime> = row.try_get("updated_at")?;
 
@@ -148,7 +141,6 @@ impl Interest {
                 id,
                 name,
                 description,
-                is_deleted,
                 created_at,
                 updated_at,
             };
@@ -166,11 +158,10 @@ impl Interest {
             id, 
             name,
             description,
-            is_deleted,
             created_at, 
             updated_at
         FROM interests 
-        WHERE id = $1 AND is_deleted = false",
+        WHERE id = $1",
         )
         .bind(interest_id)
         .fetch_one(pool)
@@ -179,7 +170,6 @@ impl Interest {
         let id: Option<i32> = row.try_get("id")?;
         let name: String = row.try_get("name")?;
         let description: String = row.try_get("description")?;
-        let is_deleted: bool = row.try_get("is_deleted")?;
         let created_at: Option<NaiveDateTime> = row.try_get("created_at")?;
         let updated_at: Option<NaiveDateTime> = row.try_get("updated_at")?;
 
@@ -187,7 +177,6 @@ impl Interest {
             id,
             name,
             description,
-            is_deleted,
             created_at,
             updated_at,
         };
@@ -196,10 +185,9 @@ impl Interest {
     }
 
     pub async fn add(pool: &Pool<Sqlite>, interest: Interest) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO interests (name, description, is_deleted) VALUES ($1, $2, $3)")
+        sqlx::query("INSERT INTO interests (name, description) VALUES ($1, $2)")
             .bind(interest.name)
             .bind(interest.description)
-            .bind(interest.is_deleted)
             .execute(pool)
             .await?;
 
@@ -207,7 +195,7 @@ impl Interest {
     }
 
     pub async fn edit(pool: &Pool<Sqlite>, interest: Interest) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE interests SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND is_deleted = false")
+        sqlx::query("UPDATE interests SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3")
         .bind(interest.name)
         .bind(interest.description)
         .bind(interest.id)
@@ -218,12 +206,10 @@ impl Interest {
     }
 
     pub async fn delete(pool: &Pool<Sqlite>, id: i32) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE interests SET is_deleted = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
-        )
-        .bind(id)
-        .execute(pool)
-        .await?;
+        sqlx::query("DELETE FROM interests WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
 
         Ok(())
     }
