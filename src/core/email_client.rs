@@ -9,13 +9,15 @@ pub struct EmailClient {
     pub from_email: String,
 }
 
+// TODO: We're assuming from_email == smtp_user provided via .env this could not be the case.
+
 #[cfg(feature = "ssr")]
 impl EmailClient {
-    fn init(mailer: SmtpTransport) -> Self {
+    fn init(mailer: SmtpTransport, from_email: String, from_name: String) -> Self {
         Self {
             mailer,
-            from_name: String::from("Coco"),
-            from_email: String::from("Email"),
+            from_name,
+            from_email,
         }
     }
 }
@@ -24,8 +26,10 @@ impl EmailClient {
 pub fn init_email_client(
     smtp_user: &str,
     smtp_password: &str,
+    from_name: &str,
 ) -> Result<EmailClient, anyhow::Error> {
-    use lettre::{transport::smtp::authentication::Credentials, SmtpTransport};
+    //use anyhow::anyhow;
+    use lettre::{SmtpTransport, transport::smtp::authentication::Credentials};
 
     let creds = Credentials::new(smtp_user.to_owned(), smtp_password.to_owned());
 
@@ -34,5 +38,14 @@ pub fn init_email_client(
         .credentials(creds)
         .build();
 
-    Ok(EmailClient::init(mailer))
+    // let test_connection = mailer.test_connection()?;
+    // if !test_connection {
+    //     return Err(anyhow!("Test connection not successfull"));
+    // }
+
+    Ok(EmailClient::init(
+        mailer,
+        smtp_user.to_string(),
+        from_name.to_string(),
+    ))
 }

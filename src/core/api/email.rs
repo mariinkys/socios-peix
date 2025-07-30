@@ -131,3 +131,26 @@ pub async fn send_interests_email(
         Ok(())
     }
 }
+
+#[server(TestEmailConfig, "/api/emails/test")]
+pub async fn test_email_config() -> Result<(), ServerFnError> {
+    use crate::core::email_client::EmailClient;
+
+    let ext_email_client: Data<EmailClient> = extract().await?;
+    let email_client: Arc<EmailClient> = ext_email_client.into_inner();
+
+    match email_client.mailer.test_connection() {
+        Ok(val) => {
+            if val {
+                Ok(())
+            } else {
+                Err(ServerFnError::new(
+                    "Failed to connect to email server, reason unknown",
+                ))
+            }
+        }
+        Err(e) => Err(ServerFnError::new(format!(
+            "Failed to connect to email server {e}"
+        ))),
+    }
+}

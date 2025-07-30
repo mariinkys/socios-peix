@@ -146,9 +146,9 @@ impl Email {
         body: String,
     ) -> Result<(), anyhow::Error> {
         use crate::core::models::member::Member;
-        use anyhow::{anyhow, Context};
-        use lettre::message::{header::ContentType, Mailbox};
+        use anyhow::{Context, anyhow};
         use lettre::Transport;
+        use lettre::message::{Mailbox, header::ContentType};
 
         // Get member with proper error handling
         let member = Member::get_single(pool, member_id)
@@ -184,10 +184,9 @@ impl Email {
             .with_context(|| "Failed to build email message")?;
 
         // Send email
-        email_client
-            .mailer
-            .send(&email)
-            .with_context(|| format!("Failed to send email to member {member_id}"))?;
+        email_client.mailer.send(&email).with_context(|| {
+            format!("Failed to send email to member {member_id} (mailer error)")
+        })?;
 
         // Record email in database
         Email::add(

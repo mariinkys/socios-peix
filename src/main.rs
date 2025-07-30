@@ -9,7 +9,7 @@ async fn main() -> std::io::Result<()> {
     use actix_web::*;
     use leptos::config::get_configuration;
     use leptos::prelude::*;
-    use leptos_actix::{generate_route_list, LeptosRoutes};
+    use leptos_actix::{LeptosRoutes, generate_route_list};
     use leptos_meta::MetaTags;
     use socios_peix::{app::*, core::database::init_database};
 
@@ -24,8 +24,9 @@ async fn main() -> std::io::Result<()> {
     // Email client
     let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
     let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
+    let from_name = std::env::var("FROM_NAME").expect("FROM_NAME must be set");
     let email_client: core::email_client::EmailClient =
-        core::email_client::init_email_client(&smtp_username, &smtp_password).unwrap();
+        core::email_client::init_email_client(&smtp_username, &smtp_password, &from_name).unwrap();
 
     println!("listening on http://{}", &addr);
 
