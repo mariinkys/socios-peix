@@ -1,11 +1,15 @@
 use leptos::prelude::*;
 
+use crate::components::emails::today_emails::TodayEmails;
 use crate::components::members::today_members::TodayMembers;
 
 /// Renders the home page of your application.
 #[component]
 pub fn HomePage() -> impl IntoView {
     view! {
-        <TodayMembers/>
+        <div class="flex flex-col gap-2">
+            <TodayMembers/>
+            <TodayEmails/>
+        </div>
     }
 }

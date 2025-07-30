@@ -11,7 +11,10 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::models::{email::Email, interest::Interest};
+use crate::core::models::{
+    email::{Email, TodayEmail},
+    interest::Interest,
+};
 
 #[server(SendSingleEmail, "/api/emails/send-single")]
 pub async fn send_single_email(
@@ -152,5 +155,22 @@ pub async fn test_email_config() -> Result<(), ServerFnError> {
         Err(e) => Err(ServerFnError::new(format!(
             "Failed to connect to email server {e}"
         ))),
+    }
+}
+
+#[server(GetTodayEmails, "/api/today-emails")]
+pub async fn get_today_emails() -> Result<Vec<TodayEmail>, ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let today = chrono::Local::now().naive_local().date();
+    let result = Email::get_today_emails(&pool, today).await;
+
+    match result {
+        Ok(members) => Ok(members),
+        Err(e) => {
+            leptos::logging::log!("Failed to get today's birthday members: {}", e);
+            Err(ServerFnError::new("Failed to retrieve birthday members"))
+        }
     }
 }

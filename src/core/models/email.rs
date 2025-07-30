@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+#[cfg(feature = "ssr")]
+use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
@@ -7,6 +9,16 @@ use sqlx::{Pool, Row, Sqlite};
 
 #[cfg(feature = "ssr")]
 use crate::core::email_client::EmailClient;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TodayEmail {
+    pub id: i32,
+    pub member_id: i32,
+    pub member_full_name: String,
+    pub subject: String,
+    pub body: String,
+    pub created_at: Option<NaiveDateTime>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Email {
@@ -203,5 +215,55 @@ impl Email {
         .with_context(|| "Failed to record email in database")?;
 
         Ok(())
+    }
+
+    // Gets all emails that have been sent today
+    pub async fn get_today_emails(
+        pool: &Pool<Sqlite>,
+        today: NaiveDate,
+    ) -> Result<Vec<TodayEmail>, sqlx::Error> {
+        use chrono::Datelike;
+
+        let today_day = today.day();
+        let today_month = today.month();
+        let today_year = today.year();
+
+        let rows = sqlx::query(
+        "SELECT 
+            e.id,
+            e.to_member_id,
+            COALESCE(m.name || ' ' || m.surname || 
+                CASE WHEN m.second_surname != '' THEN ' ' || m.second_surname ELSE '' END, '') as member_full_name,
+            e.subject,
+            e.body,
+            e.created_at
+        FROM emails e
+        LEFT JOIN members m ON e.to_member_id = m.id
+        WHERE CAST(strftime('%d', e.created_at) AS INTEGER) = $1
+            AND CAST(strftime('%m', e.created_at) AS INTEGER) = $2
+            AND CAST(strftime('%Y', e.created_at) AS INTEGER) = $3
+        ORDER BY e.created_at DESC",
+    )
+    .bind(today_day as i32)
+    .bind(today_month as i32)
+    .bind(today_year)
+    .fetch_all(pool)
+    .await?;
+
+        let mut result = Vec::<TodayEmail>::new();
+
+        for row in rows {
+            let today_email = TodayEmail {
+                id: row.try_get("id")?,
+                member_id: row.try_get("to_member_id")?,
+                member_full_name: row.try_get("member_full_name")?,
+                subject: row.try_get("subject")?,
+                body: row.try_get("body")?,
+                created_at: row.try_get("created_at")?,
+            };
+            result.push(today_email);
+        }
+
+        Ok(result)
     }
 }
