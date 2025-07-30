@@ -118,19 +118,30 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                                 when=move || { member_emails.get().is_some_and(|x| x.is_ok_and(|y| !y.is_empty()))}
                                 fallback=|| view! { <p class="text-center">"No hay emails..."</p> }
                             >
-                                <For each=move || member_emails.get().and_then(|res| res.ok()).unwrap_or_default() key=|e| e.id children=move |e| {
-                                    view! {
-                                        <div class="card card-border bg-base-300 w-full overflow-hidden">
-                                            <div class="card-body flex flex-col sm:flex-row sm:items-center gap-2 w-full">
-                                                <p class="text-lg sm:text-2xl break-words p-0 m-0">{e.subject}</p>
-                                                <p class="text-sm break-words flex-grow p-0 m-0">{e.body}</p>
-                                                <p class="text-xs sm:text-sm text-right text-gray-500 font-light ml-auto">
-                                                    {e.created_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    }
-                                }/>
+                                <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
+                                    <table class="table">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>"Asunto"</th>
+                                            <th>"Contenido"</th>
+                                            <th>"Enviado el Día"</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                            <For each=move || member_emails.get().and_then(|res| res.ok()).unwrap_or_default() key=|e| e.id children=move |e| {
+                                                view! {
+                                                    <tr>
+                                                        <th>{e.id}</th>
+                                                        <td>{e.subject}</td>
+                                                        <td>{e.body}</td>
+                                                        <td>{e.created_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
+                                                    </tr>
+                                                }
+                                            }/>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </Show>
                         </div>
                     </div>
