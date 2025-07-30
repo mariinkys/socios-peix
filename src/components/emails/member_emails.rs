@@ -3,23 +3,18 @@ use leptos::prelude::*;
 use crate::{
     components::{
         dialog::DialogComponent,
+        emails::LeptosEmail,
         page_loading::PageLoadingComponent,
         toast::{ToastMessage, ToastType},
     },
-    core::api::email::{get_member_emails, SendSingleEmail},
+    core::api::email::{SendSingleEmail, get_member_emails},
 };
-
-#[derive(Debug, Clone, Default)]
-struct Email {
-    subject: String,
-    body: String,
-}
 
 #[component]
 pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView {
     let set_toast: WriteSignal<ToastMessage> = expect_context();
 
-    let model = RwSignal::new(Email::default());
+    let model = RwSignal::new(LeptosEmail::default());
 
     let member_emails = Resource::new(
         move || member_id,
@@ -38,7 +33,7 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                         toast_type: ToastType::Success,
                         visible: true,
                     });
-                    model.set(Email::default());
+                    model.set(LeptosEmail::default());
                     member_emails.refetch();
                 }
                 Err(err) => {

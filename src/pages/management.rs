@@ -1,6 +1,8 @@
 use leptos::prelude::*;
 
-use crate::components::management::refresh_cache::RefreshCacheComponent;
+use crate::components::{
+    emails::category_emails::CategoryEmails, management::refresh_cache::RefreshCacheComponent,
+};
 
 #[component]
 pub fn ManagementPage() -> impl IntoView {
@@ -11,7 +13,7 @@ pub fn ManagementPage() -> impl IntoView {
             <div>
                 <h2 class="text-2xl font-bold">"Emails"</h2>
                 <div class="flex flex-wrap gap-2">
-                    //TODO: Enviar correo por interés
+                    <CategoryEmails/>
                 </div>
             </div>
             <div>

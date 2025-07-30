@@ -369,4 +369,71 @@ impl Member {
         }
         Ok(result)
     }
+
+    pub async fn get_members_by_interests(
+        pool: &Pool<Sqlite>,
+        interests: Vec<Interest>,
+    ) -> Result<Vec<Member>, sqlx::Error> {
+        if interests.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let interest_ids: Vec<i32> = interests
+            .into_iter()
+            .filter_map(|interest| interest.id)
+            .collect();
+
+        // placeholders for the IN clause
+        let placeholders = interest_ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("${}", i + 1))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        let query = format!(
+            "SELECT DISTINCT
+                m.id, 
+                m.name,
+                m.surname,
+                m.second_surname,
+                m.email,
+                m.birthdate,
+                m.phone,
+                m.country_id,
+                m.gender_id,
+                m.notes,
+                m.created_at, 
+                m.updated_at
+            FROM members m
+            INNER JOIN member_interests mi ON m.id = mi.member_id
+            WHERE mi.interest_id IN ({placeholders})
+            ORDER BY m.name ASC, m.surname ASC",
+        );
+        let mut query_builder = sqlx::query(&query);
+        for interest_id in interest_ids {
+            query_builder = query_builder.bind(interest_id);
+        }
+
+        let rows = query_builder.fetch_all(pool).await?;
+
+        let mut result = Vec::<Member>::new();
+
+        for row in rows {
+            let id: Option<i32> = row.try_get("id")?;
+            let email: String = row.try_get("email")?;
+
+            let member = Member {
+                id,
+                email,
+                ..Default::default()
+            };
+
+            if !member.email.is_empty() {
+                result.push(member);
+            }
+        }
+
+        Ok(result)
+    }
 }

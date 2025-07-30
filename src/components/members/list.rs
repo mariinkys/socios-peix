@@ -8,16 +8,10 @@ use crate::{
     },
     core::{
         api::{interests::get_all_interests, members::get_all_members_with_interests},
-        models::{interest::Interest, member::MemberWithInterests},
-        utils::generate_members_excel,
+        models::member::MemberWithInterests,
+        utils::{LeptosSelectableInterest, generate_members_excel},
     },
 };
-
-#[derive(Debug, Clone)]
-struct LeptosSelectableInterest {
-    interest: Interest,
-    selected: RwSignal<bool>,
-}
 
 #[component]
 pub fn MembersList() -> impl IntoView {
