@@ -218,12 +218,10 @@ impl Interest {
     }
 
     pub async fn delete(pool: &Pool<Sqlite>, id: i32) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "UPDATE interests SET is_deleted = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
-        )
-        .bind(id)
-        .execute(pool)
-        .await?;
+        sqlx::query("DELETE FROM interests WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
 
         Ok(())
     }

@@ -96,3 +96,19 @@ pub async fn upsert_memeber(member: Member) -> Result<(), ServerFnError> {
         }
     }
 }
+
+#[server(DeleteMember, "/api/member/delete")]
+pub async fn delete_memeber(member_id: i32) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = Member::delete(&pool, member_id).await;
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to delete member: {}", e);
+            Err(ServerFnError::new("Failed to delete member"))
+        }
+    }
+}
