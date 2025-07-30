@@ -120,7 +120,15 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                             >
                                 <For each=move || member_emails.get().and_then(|res| res.ok()).unwrap_or_default() key=|e| e.id children=move |e| {
                                     view! {
-                                        <p>{e.subject}</p>
+                                        <div class="card card-border bg-base-300 w-full overflow-hidden">
+                                            <div class="card-body flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                                                <p class="text-lg sm:text-2xl break-words p-0 m-0">{e.subject}</p>
+                                                <p class="text-sm break-words flex-grow p-0 m-0">{e.body}</p>
+                                                <p class="text-xs sm:text-sm text-right text-gray-500 font-light ml-auto">
+                                                    {e.created_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}
+                                                </p>
+                                            </div>
+                                        </div>
                                     }
                                 }/>
                             </Show>
