@@ -3,11 +3,13 @@ use leptos::prelude::*;
 use crate::{
     components::{
         dialog::DialogComponent,
-        emails::LeptosEmail,
         page_loading::PageLoadingComponent,
         toast::{ToastMessage, ToastType},
     },
-    core::api::email::{SendSingleEmail, get_member_emails},
+    core::{
+        api::email::{SendSingleEmail, get_member_emails},
+        utils::leptos::LeptosEmail,
+    },
 };
 
 #[component]
@@ -46,6 +48,42 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
             }
         }
     });
+
+    let current_page = RwSignal::new(1usize);
+    let items_per_page = RwSignal::new(5usize);
+    let paginated_emails = move || {
+        if let Some(Ok(cupons)) = member_emails.get() {
+            let page = current_page.get();
+            let per_page = items_per_page.get();
+            let start_idx = (page - 1) * per_page;
+
+            Some(
+                cupons
+                    .into_iter()
+                    .skip(start_idx)
+                    .take(per_page)
+                    .collect::<Vec<_>>(),
+            )
+        } else {
+            None
+        }
+    };
+    let pagination_info = move || {
+        if let Some(Ok(cupons)) = member_emails.get() {
+            let total_items = cupons.len();
+            let per_page = items_per_page.get();
+            let total_pages = if total_items == 0 {
+                1
+            } else {
+                total_items.div_ceil(per_page)
+            };
+            let current = current_page.get();
+
+            (total_items, total_pages, current, per_page)
+        } else {
+            (0, 1, 1, items_per_page.get())
+        }
+    };
 
     view! {
         <Suspense fallback=move || view! { <PageLoadingComponent/> }>
@@ -115,7 +153,7 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                         </div>
                         <div class="flex flex-col gap-2">
                             <Show
-                                when=move || { member_emails.get().is_some_and(|x| x.is_ok_and(|y| !y.is_empty()))}
+                                when=move || { paginated_emails().is_some_and(|x| !x.is_empty()) }
                                 fallback=|| view! { <p class="text-center">"No hay emails..."</p> }
                             >
                                 <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-200">
@@ -129,7 +167,7 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                                         </tr>
                                         </thead>
                                         <tbody>
-                                            <For each=move || member_emails.get().and_then(|res| res.ok()).unwrap_or_default() key=|e| e.id children=move |e| {
+                                            <For each=move || paginated_emails().unwrap_or_default() key=|e| e.id children=move |e| {
                                                 view! {
                                                     <tr>
                                                         <th>{e.id}</th>
@@ -141,6 +179,70 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                                             }/>
                                         </tbody>
                                     </table>
+                                </div>
+
+                                <div class="flex justify-center mt-4">
+                                    <div class="join">
+                                        {move || {
+                                            let (_, total_pages, current, _) = pagination_info();
+
+                                            let prev_disabled = current <= 1;
+                                            let prev_button = view! {
+                                                <button class="join-item btn"
+                                                    class:btn-disabled=prev_disabled
+                                                    on:click=move |_| {
+                                                        if current > 1 {
+                                                            current_page.set(current - 1);
+                                                        }
+                                                    }
+                                                >"«"</button>
+                                            };
+
+                                            // Page numbers
+                                            let mut page_buttons = Vec::new();
+                                            let start_page = if current <= 3 { 1 } else { current - 2 };
+                                            let end_page = std::cmp::min(start_page + 4, total_pages);
+                                            let actual_start = if end_page - start_page < 4 && end_page >= 5 {
+                                                std::cmp::max(1, end_page - 4)
+                                            } else {
+                                                start_page
+                                            };
+
+                                            for page in actual_start..=end_page {
+                                                let is_current = page == current;
+                                                page_buttons.push(view! {
+                                                    <button class="join-item btn"
+                                                        class:btn-active=is_current
+                                                        on:click=move |_| {
+                                                            current_page.set(page);
+                                                        }
+                                                    >{page}</button>
+                                                });
+                                            }
+
+                                            let next_disabled = current >= total_pages;
+                                            let next_button = view! {
+                                                <button class="join-item btn"
+                                                    class:btn-disabled=next_disabled
+                                                    on:click=move |_| {
+                                                        if current < total_pages {
+                                                            current_page.set(current + 1);
+                                                        }
+                                                    }
+                                                >"»"</button>
+                                            };
+
+                                            view! {
+                                                <div class="flex gap-1">
+                                                    {prev_button}
+                                                    <div>
+                                                        {page_buttons.into_iter().collect_view()}
+                                                    </div>
+                                                    {next_button}
+                                                </div>
+                                            }
+                                        }}
+                                    </div>
                                 </div>
                             </Show>
                         </div>

@@ -56,6 +56,75 @@ pub async fn send_single_email(
     }
 }
 
+#[server(SendCuponEmail, "/api/emails/send-cupon")]
+pub async fn send_cupon_email(
+    member_id: i32,
+    cupon_description: String,
+    cupon_expires_at: Option<chrono::NaiveDate>,
+    subject: String,
+    original_body: String,
+) -> Result<(), ServerFnError> {
+    use crate::core::email_client::EmailClient;
+    use crate::core::models::cupon::Cupon;
+    use crate::core::models::member::Member;
+    use crate::core::utils::email::EmailKind;
+
+    let ext_email_client: Data<EmailClient> = extract().await?;
+    let ext_database: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext_database.into_inner();
+    let email_client: Arc<EmailClient> = ext_email_client.into_inner();
+
+    let member = Member::get_single(&pool, member_id).await;
+    let member = if let Err(err) = member {
+        return Err(ServerFnError::new(format!("Error getting member: {err}")));
+    } else {
+        member.unwrap()
+    };
+
+    //TODO: Gerate real cupon code
+    let cupon = Cupon {
+        member_id: Some(member_id),
+        code: String::from("A567FGXA"),
+        description: cupon_description,
+        expires_at: cupon_expires_at,
+        ..Default::default()
+    };
+    let cupon_result = Cupon::add(&pool, cupon.clone()).await;
+    if let Err(err) = cupon_result {
+        return Err(ServerFnError::new(format!("Error creating cupon: {err}")));
+    };
+
+    let body = EmailKind::get_styled(
+        &EmailKind::Cupon,
+        Some(original_body.clone()),
+        Some(member),
+        Some(cupon),
+    );
+    if let Err(err) = body {
+        return Err(ServerFnError::new(format!(
+            "Error creating email template: {err}"
+        )));
+    }
+
+    let result = Email::send_single(
+        &pool,
+        &email_client,
+        member_id,
+        subject,
+        body.unwrap(),
+        original_body,
+    )
+    .await;
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to send single email: {}", e);
+            Err(ServerFnError::new("Failed to send single email"))
+        }
+    }
+}
+
 #[server(MemberInterests, "/api/emails/member")]
 pub async fn get_member_emails(member_id: i32) -> Result<Vec<Email>, ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;

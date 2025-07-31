@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS cupons (
     description TEXT NOT NULL,
     used BOOLEAN NOT NULL DEFAULT 0,
     is_deleted BOOLEAN NOT NULL DEFAULT 0,
-    expires_at DATETIME,
+    expires_at DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE

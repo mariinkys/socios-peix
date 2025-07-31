@@ -1,3 +1,4 @@
+pub mod cupons;
 pub mod dialog;
 pub mod emails;
 pub mod interests;

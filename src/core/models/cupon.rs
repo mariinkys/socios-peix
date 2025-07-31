@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use chrono::NaiveDateTime;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use sqlx::{Pool, Row, Sqlite};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Cupon {
     pub id: Option<i32>,
     pub member_id: Option<i32>,
@@ -13,7 +13,7 @@ pub struct Cupon {
     pub description: String,
     pub used: bool,
     pub is_deleted: bool,
-    pub expires_at: Option<NaiveDateTime>,
+    pub expires_at: Option<NaiveDate>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
 }
@@ -55,5 +55,21 @@ impl Cupon {
         }
 
         Ok(cupons)
+    }
+
+    /// Add a new cupon
+    pub async fn add(pool: &Pool<Sqlite>, cupon: Cupon) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO cupons (member_id, code, description, expires_at, created_at)
+             VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)",
+        )
+        .bind(cupon.member_id)
+        .bind(cupon.code)
+        .bind(cupon.description)
+        .bind(cupon.expires_at)
+        .execute(pool)
+        .await?;
+
+        Ok(())
     }
 }

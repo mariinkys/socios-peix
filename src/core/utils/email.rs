@@ -89,11 +89,11 @@ impl EmailKind {
                                 </p>
                                 <div style="background: #eaf4ff; border: 2px dashed #2980b9; padding: 15px; text-align: center; font-size: 18px; margin: 20px 0;">
                                     Código de Cupón: <strong>{codigo}</strong><br/>
-                                    Descuento: <strong>{descuento}%</strong><br/>
+                                    Descripción: <strong>{descripcion}</strong><br/>
                                     Válido hasta: <strong>{fecha}</strong>
                                 </div>
                                 <p style="font-size: 14px; color: #777; text-align: center;">
-                                    ¡Reserve ahora y aproveche esta oportunidad!<br/>
+                                    ¡Aproveche esta oportunidad!<br/>
                                     El equipo del Hotel Casa Peix.
                                 </p>
                             </div>
@@ -102,7 +102,7 @@ impl EmailKind {
                     "#,
                     nombre = member.name,
                     codigo = cupon.code,
-                    descuento = cupon.description,
+                    descripcion = cupon.description,
                     fecha = cupon
                         .expires_at
                         .map(|x| x.format("%d-%m-%Y").to_string())

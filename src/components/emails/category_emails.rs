@@ -3,14 +3,13 @@ use leptos::prelude::*;
 use crate::{
     components::{
         dialog::DialogComponent,
-        emails::LeptosEmail,
         page_loading::PageLoadingComponent,
         toast::{ToastMessage, ToastType},
     },
     core::{
         api::{email::SendInterestsEmail, interests::get_all_interests},
         models::interest::Interest,
-        utils::leptos::LeptosSelectableInterest,
+        utils::leptos::{LeptosEmail, LeptosSelectableInterest},
     },
 };
 
