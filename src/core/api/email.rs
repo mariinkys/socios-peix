@@ -201,3 +201,122 @@ pub async fn get_today_emails() -> Result<Vec<TodayEmail>, ServerFnError> {
         }
     }
 }
+
+#[server(SendBirthdayEmails, "/api/emails/send-birthday")]
+pub async fn send_birthday_emails() -> Result<(), ServerFnError> {
+    use crate::core::email_client::EmailClient;
+    use crate::core::models::email::Email;
+    use crate::core::utils::email::EmailKind;
+
+    leptos::logging::log!("Starting birthday email sending process");
+
+    let ext_email_client: Data<EmailClient> = extract().await?;
+    let ext_database: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext_database.into_inner();
+    let email_client: Arc<EmailClient> = ext_email_client.into_inner();
+
+    let today = chrono::Local::now().naive_local().date();
+
+    let members_result = crate::core::models::member::Member::get_today_members(&pool, today).await;
+
+    match members_result {
+        Ok(members) => {
+            if !members.is_empty() {
+                let mut successful_sends = 0;
+                let mut failed_sends = 0;
+
+                for member in &members {
+                    let body = EmailKind::get_styled(
+                        &EmailKind::Birthday,
+                        None,
+                        Some(member.clone()),
+                        None,
+                    );
+                    let body = match body {
+                        Ok(body_content) => body_content,
+                        Err(err) => {
+                            leptos::logging::log!(
+                                "Failed to generate email body for member {}: {}",
+                                member.id.unwrap_or(0),
+                                err
+                            );
+                            failed_sends += 1;
+                            continue; // skip this member
+                        }
+                    };
+
+                    match member.id {
+                        Some(member_id) => {
+                            match Email::send_single(
+                                &pool,
+                                &email_client,
+                                member_id,
+                                String::from("Feliz Cumpleaños!"),
+                                body,
+                                String::from("Email de Cumpleaños por defecto."),
+                            )
+                            .await
+                            {
+                                Ok(()) => {
+                                    successful_sends += 1;
+                                }
+                                Err(e) => {
+                                    failed_sends += 1;
+                                    leptos::logging::log!(
+                                        "Failed to send birthday email to member ID: {} ({}): {}",
+                                        member_id,
+                                        member.name,
+                                        e
+                                    );
+                                }
+                            }
+                        }
+                        None => {
+                            failed_sends += 1;
+                        }
+                    }
+                }
+
+                if failed_sends > 0 && successful_sends == 0 {
+                    leptos::logging::log!(
+                        "COMPLETE FAILURE: Failed to send emails to any of the {} members",
+                        members.len()
+                    );
+                    Err(ServerFnError::new(format!(
+                        "Failed to send emails to any of the {} members",
+                        members.len()
+                    )))
+                } else if failed_sends > 0 {
+                    leptos::logging::log!(
+                        "PARTIAL SUCCESS: sent {}/{} emails successfully, {} failed",
+                        successful_sends,
+                        &members.len(),
+                        failed_sends
+                    );
+                    Err(ServerFnError::new(format!(
+                        "Partially successful: sent {}/{} emails successfully, {} failed",
+                        successful_sends,
+                        members.len(),
+                        failed_sends
+                    )))
+                } else {
+                    leptos::logging::log!(
+                        "COMPLETE SUCCESS: Successfully sent birthday emails to all {} members",
+                        successful_sends
+                    );
+                    Ok(())
+                }
+            } else {
+                leptos::logging::log!("No members have birthdays today ({})", today);
+                Ok(())
+            }
+        }
+        Err(e) => {
+            leptos::logging::log!(
+                "DATABASE ERROR: Failed to get today's birthday members: {}",
+                e
+            );
+            Err(ServerFnError::new("Failed to retrieve birthday members"))
+        }
+    }
+}
