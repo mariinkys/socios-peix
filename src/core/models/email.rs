@@ -155,7 +155,8 @@ impl Email {
         email_client: &EmailClient,
         member_id: i32,
         subject: String,
-        body: String,
+        html_body: String,
+        original_body: String,
     ) -> Result<(), anyhow::Error> {
         use crate::core::models::member::Member;
         use anyhow::{Context, anyhow};
@@ -183,7 +184,22 @@ impl Email {
             .parse()
             .with_context(|| format!("Invalid member email address: {}", member.email))?;
 
-        // Build email message
+        // HTML part
+        let html_part = lettre::message::SinglePart::builder()
+            .header(ContentType::TEXT_HTML)
+            .body(html_body.clone());
+
+        // Inline image attachment
+        let image_part = lettre::message::Attachment::new_inline("logo.png".into()).body(
+            lettre::message::Body::new(crate::core::utils::email::LOGO.to_vec()),
+            "image/png".parse().unwrap(),
+        );
+
+        // Combine into multipart/related (HTML + image)
+        let multipart = lettre::message::MultiPart::related()
+            .singlepart(html_part)
+            .singlepart(image_part);
+
         let email = lettre::Message::builder()
             .from(Mailbox::new(
                 Some(email_client.from_name.clone()),
@@ -191,11 +207,9 @@ impl Email {
             ))
             .to(Mailbox::new(Some(member.to_string()), to_email))
             .subject(&subject)
-            .header(ContentType::TEXT_PLAIN)
-            .body(body.clone())
+            .multipart(multipart)
             .with_context(|| "Failed to build email message")?;
 
-        // Send email
         email_client.mailer.send(&email).with_context(|| {
             format!("Failed to send email to member {member_id} (mailer error)")
         })?;
@@ -207,7 +221,7 @@ impl Email {
                 id: None,
                 to_member_id: member_id,
                 subject,
-                body,
+                body: original_body,
                 created_at: None,
             },
         )

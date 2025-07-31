@@ -9,7 +9,7 @@ use crate::{
     core::{
         api::{interests::get_all_interests, members::get_all_members_with_interests},
         models::member::MemberWithInterests,
-        utils::{LeptosSelectableInterest, generate_members_excel},
+        utils::{excel::generate_members_excel, leptos::LeptosSelectableInterest},
     },
 };
 

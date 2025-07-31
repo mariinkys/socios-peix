@@ -10,7 +10,7 @@ use crate::{
     core::{
         api::{email::SendInterestsEmail, interests::get_all_interests},
         models::interest::Interest,
-        utils::LeptosSelectableInterest,
+        utils::leptos::LeptosSelectableInterest,
     },
 };
 
@@ -175,7 +175,7 @@ pub fn CategoryEmails() -> impl IntoView {
                                                         .map(|x| x.interest.clone())
                                                         .collect();
 
-                                                    send_emails_action.dispatch(SendInterestsEmail { interests, subject: email.subject, body: email.body });
+                                                    send_emails_action.dispatch(SendInterestsEmail { interests, subject: email.subject, original_body: email.body });
                                                 }}
                                             >"Enviar"</button>
                                         </div>

@@ -90,11 +90,11 @@ pub fn MemberEmails(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
 
                                             <div class="w-full">
                                                 <fieldset class="fieldset">
-                                                    <label class="label" for="body">"Contenido"</label>
+                                                    <label class="label" for="original_body">"Contenido"</label>
                                                     <textarea
                                                         class="textarea w-full min-h-40"
-                                                        name="body"
-                                                        id="body"
+                                                        name="original_body"
+                                                        id="original_body"
                                                         autocomplete="off"
                                                         disabled={move || !edit_mode.get() }
                                                         prop:value={move || model.get().body}

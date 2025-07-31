@@ -20,16 +20,32 @@ use crate::core::models::{
 pub async fn send_single_email(
     member_id: i32,
     subject: String,
-    body: String,
+    original_body: String,
 ) -> Result<(), ServerFnError> {
     use crate::core::email_client::EmailClient;
+    use crate::core::utils::email::EmailKind;
 
     let ext_email_client: Data<EmailClient> = extract().await?;
     let ext_database: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext_database.into_inner();
     let email_client: Arc<EmailClient> = ext_email_client.into_inner();
 
-    let result = Email::send_single(&pool, &email_client, member_id, subject, body).await;
+    let body = EmailKind::get_styled(&EmailKind::Normal, Some(original_body.clone()), None, None);
+    if let Err(err) = body {
+        return Err(ServerFnError::new(format!(
+            "Error creating email template: {err}"
+        )));
+    }
+
+    let result = Email::send_single(
+        &pool,
+        &email_client,
+        member_id,
+        subject,
+        body.unwrap(),
+        original_body,
+    )
+    .await;
 
     match result {
         Ok(()) => Ok(()),
@@ -60,9 +76,10 @@ pub async fn get_member_emails(member_id: i32) -> Result<Vec<Email>, ServerFnErr
 pub async fn send_interests_email(
     interests: Vec<Interest>,
     subject: String,
-    body: String,
+    original_body: String,
 ) -> Result<(), ServerFnError> {
     use crate::core::email_client::EmailClient;
+    use crate::core::utils::email::EmailKind;
 
     if interests.is_empty() {
         return Err(ServerFnError::new("No interests provided"));
@@ -70,7 +87,7 @@ pub async fn send_interests_email(
     if subject.trim().is_empty() {
         return Err(ServerFnError::new("Subject cannot be empty"));
     }
-    if body.trim().is_empty() {
+    if original_body.trim().is_empty() {
         return Err(ServerFnError::new("Email body cannot be empty"));
     }
 
@@ -93,6 +110,15 @@ pub async fn send_interests_email(
         ));
     };
 
+    let body = EmailKind::get_styled(&EmailKind::Normal, Some(original_body.clone()), None, None);
+    let body = if let Err(err) = body {
+        return Err(ServerFnError::new(format!(
+            "Error creating email template: {err}"
+        )));
+    } else {
+        body.unwrap()
+    };
+
     let mut successful_sends = 0;
     let mut failed_sends = 0;
 
@@ -105,6 +131,7 @@ pub async fn send_interests_email(
                     member_id,
                     subject.clone(),
                     body.clone(),
+                    original_body.clone(),
                 )
                 .await
                 {
