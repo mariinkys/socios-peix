@@ -67,6 +67,7 @@ pub async fn send_cupon_email(
     use crate::core::email_client::EmailClient;
     use crate::core::models::cupon::Cupon;
     use crate::core::models::member::Member;
+    use crate::core::utils::cupon::generate_random_code;
     use crate::core::utils::email::EmailKind;
 
     let ext_email_client: Data<EmailClient> = extract().await?;
@@ -81,10 +82,9 @@ pub async fn send_cupon_email(
         member.unwrap()
     };
 
-    //TODO: Gerate real cupon code
     let cupon = Cupon {
         member_id: Some(member_id),
-        code: String::from("A567FGXA"),
+        code: generate_random_code(),
         description: cupon_description,
         expires_at: cupon_expires_at,
         ..Default::default()
@@ -271,7 +271,7 @@ pub async fn get_today_emails() -> Result<Vec<TodayEmail>, ServerFnError> {
     }
 }
 
-#[server(SendBirthdayEmails, "/api/emails/send-birthday")]
+#[server(prefix = "/api", endpoint = "emails/send-birthday")]
 pub async fn send_birthday_emails() -> Result<(), ServerFnError> {
     use crate::core::email_client::EmailClient;
     use crate::core::models::email::Email;
