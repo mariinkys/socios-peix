@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use crate::components::{
-    emails::category_emails::CategoryEmails,
+    emails::{category_cupon_emails::CategoryCuponEmails, category_emails::CategoryEmails},
     management::{refresh_cache::RefreshCacheComponent, test_email_connection::TestEmailConfig},
 };
 
@@ -16,6 +16,12 @@ pub fn ManagementPage() -> impl IntoView {
                 <div class="flex flex-wrap gap-2">
                     <TestEmailConfig/>
                     <CategoryEmails/>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold">"Cupones"</h2>
+                <div class="flex flex-wrap gap-2">
+                    <CategoryCuponEmails/>
                 </div>
             </div>
             <div>

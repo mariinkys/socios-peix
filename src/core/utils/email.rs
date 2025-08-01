@@ -105,6 +105,9 @@ impl EmailKind {
                                 <p style="font-size: 12px; color: #777; text-align: center;">
                                     (Puede darse de baja en cualquier momento escribiendo un correo a infohotelcasapeix@gmail.com)
                                 </p>
+                                <p style="font-size: 10px; color: #5b5b5b; text-align: center;">
+                                    El establecimiento se reserva el derecho a no admitir cualquier cupón independientemente de su fecha de caducidad
+                                </p>
                             </div>
                         </body>
                     </html>

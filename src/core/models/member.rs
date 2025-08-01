@@ -422,10 +422,16 @@ impl Member {
         for row in rows {
             let id: Option<i32> = row.try_get("id")?;
             let email: String = row.try_get("email")?;
+            let name: String = row.try_get("name")?;
+            let surname: String = row.try_get("surname")?;
+            let second_surname: String = row.try_get("second_surname")?;
 
             let member = Member {
                 id,
                 email,
+                name,
+                surname,
+                second_surname,
                 ..Default::default()
             };
 
