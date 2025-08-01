@@ -69,7 +69,7 @@ pub fn CategoryEmails() -> impl IntoView {
     });
 
     view! {
-        <div class="card bg-base-100 shadow-xl w-96">
+        <div class="card bg-base-100 shadow-xl w-80">
             <div class="card-body w-full h-full justify-between">
                 <p class="text-xl text-center">"Escribir Correo por Interés"</p>
                 <button class="btn btn-success w-full"

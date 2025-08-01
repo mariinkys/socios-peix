@@ -16,7 +16,7 @@ pub fn RefreshCacheComponent() -> impl IntoView {
     };
 
     view! {
-        <div class="card bg-base-100 shadow-xl w-96">
+        <div class="card bg-base-100 shadow-xl w-80">
             <div class="card-body w-full h-full justify-between">
                 <p class="text-xl text-center">"Actualizar Cache de la Aplicación"</p>
                 <button class="btn btn-success w-full"

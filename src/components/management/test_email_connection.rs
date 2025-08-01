@@ -38,7 +38,7 @@ pub fn TestEmailConfig() -> impl IntoView {
             <ErrorBoundary fallback=|error| view! {
                 <p class="text-xl text-center text-red-500">"An error occurred: " {format!("{error:?}")}</p>
             }>
-                <div class="card bg-base-100 shadow-xl w-96">
+                <div class="card bg-base-100 shadow-xl w-80">
                     <ActionForm action=test_config attr:class="h-full">
                         <div class="card-body w-full h-full justify-between">
                             <p class="text-xl text-center">"Probar Conexión a Servidor Email"</p>
