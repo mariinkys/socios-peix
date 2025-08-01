@@ -30,9 +30,12 @@ impl EmailKind {
                                 <p style="font-size: 16px; line-height: 1.6;">
                                     {email_body}
                                 </p>
-                                <p style="font-size: 14px; color: #777; text-align: center; margin-top: 30px;">
+                                <p style="font-size: 14px; color: #5b5b5b; text-align: center; margin-top: 30px;">
                                     ¡Gracias por confiar en nosotros!<br/>
                                     El equipo del Hotel Casa Peix.
+                                </p>
+                                <p style="font-size: 12px; color: #777; text-align: center;">
+                                    (Puede darse de baja en cualquier momento escribiendo un correo a infohotelcasapeix@gmail.com)
                                 </p>
                             </div>
                         </body>
@@ -56,9 +59,12 @@ impl EmailKind {
                                 <p style="font-size: 16px; line-height: 1.6;">
                                     Como muestra de nuestro cariño, queremos recordarle que siempre será bienvenido(a) en nuestro hotel.
                                 </p>
-                                <p style="font-size: 14px; color: #777; margin-top: 30px;">
+                                <p style="font-size: 14px; color: #5b5b5b; margin-top: 30px;">
                                     Con nuestros mejores deseos,<br/>
                                     El equipo del Hotel Casa Peix.
+                                </p>
+                                <p style="font-size: 12px; color: #777; text-align: center;">
+                                    (Puede darse de baja en cualquier momento escribiendo un correo a infohotelcasapeix@gmail.com)
                                 </p>
                             </div>
                         </body>
@@ -92,9 +98,12 @@ impl EmailKind {
                                     Descripción: <strong>{descripcion}</strong><br/>
                                     Válido hasta: <strong>{fecha}</strong>
                                 </div>
-                                <p style="font-size: 14px; color: #777; text-align: center;">
+                                <p style="font-size: 14px; color: #5b5b5b; text-align: center;">
                                     ¡Aproveche esta oportunidad!<br/>
                                     El equipo del Hotel Casa Peix.
+                                </p>
+                                <p style="font-size: 12px; color: #777; text-align: center;">
+                                    (Puede darse de baja en cualquier momento escribiendo un correo a infohotelcasapeix@gmail.com)
                                 </p>
                             </div>
                         </body>
