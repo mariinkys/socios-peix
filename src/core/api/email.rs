@@ -106,14 +106,12 @@ pub async fn send_single_email(
     subject: String,
     original_body: String,
 ) -> Result<(), ServerFnError> {
-    use crate::core::utils::email::EmailKind;
+    use crate::core::utils::email::get_normal_styled;
 
     let (pool, email_client) = extract_dependencies().await?;
 
     validate_email_inputs(&subject, &original_body)?;
-    let body =
-        EmailKind::get_styled(&EmailKind::Normal, Some(original_body.clone()), None, None)
-            .map_err(|err| ServerFnError::new(format!("Error creating email template: {err}")))?;
+    let body = get_normal_styled(original_body.clone());
 
     Email::send_single(
         &pool,
@@ -139,7 +137,7 @@ pub async fn send_cupon_email(
     original_body: String,
 ) -> Result<(), ServerFnError> {
     use crate::core::models::{cupon::Cupon, member::Member};
-    use crate::core::utils::{cupon::generate_random_code, email::EmailKind};
+    use crate::core::utils::{cupon::generate_random_code, email::get_cupon_styled};
 
     let (pool, email_client) = extract_dependencies().await?;
     if subject.trim().is_empty() {
@@ -168,13 +166,7 @@ pub async fn send_cupon_email(
         .await
         .map_err(|err| ServerFnError::new(format!("Error creating cupon: {err}")))?;
 
-    let body = EmailKind::get_styled(
-        &EmailKind::Cupon,
-        Some(original_body.clone()),
-        Some(member),
-        Some(cupon),
-    )
-    .map_err(|err| ServerFnError::new(format!("Error creating email template: {err}")))?;
+    let body = get_cupon_styled(original_body.clone(), &member, &cupon);
 
     Email::send_single(
         &pool,
@@ -208,7 +200,7 @@ pub async fn send_interests_email(
     subject: String,
     original_body: String,
 ) -> Result<(), ServerFnError> {
-    use crate::core::utils::email::EmailKind;
+    use crate::core::utils::email::get_normal_styled;
 
     if interests.is_empty() {
         return Err(ServerFnError::new("No interests provided"));
@@ -230,9 +222,7 @@ pub async fn send_interests_email(
         ));
     }
 
-    let body =
-        EmailKind::get_styled(&EmailKind::Normal, Some(original_body.clone()), None, None)
-            .map_err(|err| ServerFnError::new(format!("Error creating email template: {err}")))?;
+    let body = get_normal_styled(original_body.clone());
 
     send_to_members(
         &pool,
@@ -248,7 +238,7 @@ pub async fn send_interests_email(
 
 #[server(SendAllEmail, "/api/emails/send-all")]
 pub async fn send_all_email(subject: String, original_body: String) -> Result<(), ServerFnError> {
-    use crate::core::utils::email::EmailKind;
+    use crate::core::utils::email::get_normal_styled;
 
     validate_email_inputs(&subject, &original_body)?;
 
@@ -265,9 +255,7 @@ pub async fn send_all_email(subject: String, original_body: String) -> Result<()
         return Err(ServerFnError::new("No members found"));
     }
 
-    let body =
-        EmailKind::get_styled(&EmailKind::Normal, Some(original_body.clone()), None, None)
-            .map_err(|err| ServerFnError::new(format!("Error creating email template: {err}")))?;
+    let body = get_normal_styled(original_body.clone());
 
     send_to_members(
         &pool,
@@ -312,7 +300,7 @@ pub async fn get_today_emails() -> Result<Vec<TodayEmail>, ServerFnError> {
 
 #[server(prefix = "/api", endpoint = "emails/send-birthday")]
 pub async fn send_birthday_emails() -> Result<(), ServerFnError> {
-    use crate::core::utils::email::EmailKind;
+    use crate::core::utils::email::get_birthday_styled;
 
     leptos::logging::log!("Starting birthday email sending process");
 
@@ -338,19 +326,7 @@ pub async fn send_birthday_emails() -> Result<(), ServerFnError> {
     let mut failed_sends = 0;
 
     for member in &members {
-        let body =
-            match EmailKind::get_styled(&EmailKind::Birthday, None, Some(member.clone()), None) {
-                Ok(body_content) => body_content,
-                Err(err) => {
-                    leptos::logging::log!(
-                        "Failed to generate email body for member {}: {}",
-                        member.id.unwrap_or(0),
-                        err
-                    );
-                    failed_sends += 1;
-                    continue;
-                }
-            };
+        let body = get_birthday_styled(member);
 
         if let Some(member_id) = member.id {
             match Email::send_single(
@@ -427,7 +403,7 @@ async fn send_coupon_emails_to_members(
     cupon_expires_at: Option<chrono::NaiveDate>,
 ) -> Result<(), ServerFnError> {
     use crate::core::models::cupon::Cupon;
-    use crate::core::utils::{cupon::generate_random_code, email::EmailKind};
+    use crate::core::utils::{cupon::generate_random_code, email::get_cupon_styled};
 
     if subject.trim().is_empty() {
         return Err(ServerFnError::new("Subject cannot be empty"));
@@ -459,18 +435,7 @@ async fn send_coupon_emails_to_members(
                     continue;
                 }
 
-                let body = match EmailKind::get_styled(
-                    &EmailKind::Cupon,
-                    Some(original_body.clone()),
-                    Some(member.clone()),
-                    Some(cupon),
-                ) {
-                    Ok(body_content) => body_content,
-                    Err(_) => {
-                        failed_sends += 1;
-                        continue;
-                    }
-                };
+                let body = get_cupon_styled(original_body.to_string(), member, &cupon);
 
                 match Email::send_single(
                     pool,
