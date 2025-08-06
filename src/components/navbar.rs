@@ -44,6 +44,7 @@ pub fn NavbarComponent() -> impl IntoView {
                     <li><a href="/members">"Socios"</a></li>
                     <li><a href="/interests">"Intereses"</a></li>
                     <li><a href="/management">"Gestión"</a></li>
+                    <li><a href="/cupon-check">"Comprobar Cupón"</a></li>
                 </ul>
                 </div>
             </div>

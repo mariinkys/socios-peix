@@ -57,6 +57,42 @@ impl Cupon {
         Ok(cupons)
     }
 
+    pub async fn get_cupons_by_code(
+        pool: &Pool<Sqlite>,
+        code: &str,
+        today: NaiveDate,
+    ) -> Result<Vec<Cupon>, sqlx::Error> {
+        let rows = sqlx::query(
+            "SELECT cupons.* 
+         FROM cupons 
+         WHERE cupons.code = $1
+           AND (expires_at IS NULL OR DATE(expires_at) >= DATE($2))",
+        )
+        .bind(code)
+        .bind(today)
+        .fetch_all(pool)
+        .await?;
+
+        let mut cupons = Vec::<Cupon>::new();
+
+        for row in rows {
+            let cupon = Cupon {
+                id: row.try_get("id")?,
+                member_id: row.try_get("member_id")?,
+                code: row.try_get("code")?,
+                used: row.try_get("used")?,
+                description: row.try_get("description")?,
+                expires_at: row.try_get("expires_at")?,
+                is_deleted: row.try_get("is_deleted")?,
+                created_at: row.try_get("created_at")?,
+                updated_at: row.try_get("updated_at")?,
+            };
+            cupons.push(cupon);
+        }
+
+        Ok(cupons)
+    }
+
     /// Add a new cupon
     pub async fn add(pool: &Pool<Sqlite>, cupon: Cupon) -> Result<(), sqlx::Error> {
         sqlx::query(

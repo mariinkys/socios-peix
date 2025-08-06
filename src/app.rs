@@ -9,6 +9,7 @@ use leptos_router::{
 use crate::{
     components::{navbar::NavbarComponent, toast::ToastComponent},
     pages::{
+        cupons::cupon_check::CuponCheckPage,
         home::HomePage,
         interests::{list::InterestsPage, upsert::UpsertInterestPage},
         management::ManagementPage,
@@ -42,6 +43,7 @@ pub fn App() -> impl IntoView {
                     <Route path=path!("/interests") view=InterestsPage/>
                     <Route path=path!("/interests/:id") view=UpsertInterestPage/>
                     <Route path=path!("/management") view=ManagementPage/>
+                    <Route path=path!("/cupon-check") view=CuponCheckPage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
                 </Routes>
             </main>

@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::core::models::cupon::Cupon;
 
-#[server(MemberInterests, "/api/emails/member")]
+#[server(MemberCupons, "/api/emails/member")]
 pub async fn get_member_cupons(member_id: i32) -> Result<Vec<Cupon>, ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
@@ -23,8 +23,25 @@ pub async fn get_member_cupons(member_id: i32) -> Result<Vec<Cupon>, ServerFnErr
     match result {
         Ok(cupons) => Ok(cupons),
         Err(e) => {
-            leptos::logging::log!("Failed to get all emails: {}", e);
-            Err(ServerFnError::new("Failed to retrieve all emails"))
+            leptos::logging::log!("Failed to get member cupons: {}", e);
+            Err(ServerFnError::new("Failed to retrieve member cupons"))
+        }
+    }
+}
+
+#[server(CuponsByCode, "/api/emails/member")]
+pub async fn get_cupons_by_code(cupon: String) -> Result<Vec<Cupon>, ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let today = chrono::Local::now().naive_local().date();
+    let result = Cupon::get_cupons_by_code(&pool, cupon.trim(), today).await;
+
+    match result {
+        Ok(cupons) => Ok(cupons),
+        Err(e) => {
+            leptos::logging::log!("Failed to get cupons: {}", e);
+            Err(ServerFnError::new("Failed to retrieve cupons"))
         }
     }
 }
