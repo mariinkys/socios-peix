@@ -23,3 +23,4 @@ playwright/.cache/
 .env
 socios.db
 app/
+set_env.sh
