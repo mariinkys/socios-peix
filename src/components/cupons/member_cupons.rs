@@ -213,6 +213,7 @@ pub fn MemberCupons(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                                             <th>"Descripción"</th>
                                             <th>"Enviado el Día"</th>
                                             <th>"Caduca el Día"</th>
+                                            <th>"Usado"</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -224,6 +225,7 @@ pub fn MemberCupons(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                                                         <td>{c.description}</td>
                                                         <td>{c.created_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
                                                         <td>{c.expires_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
+                                                        <td>{if c.used { "Sí" } else { "No" }}</td>
                                                     </tr>
                                                 }
                                             }/>
