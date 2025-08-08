@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# To run on the current session use: source set_env.sh
+
 # Set environment variables
 export DATABASE_URL="sqlite:socios.db"
 export FROM_NAME="From Email Name"
