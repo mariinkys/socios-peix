@@ -12,6 +12,7 @@ use sqlx::{Pool, Sqlite};
 use std::sync::Arc;
 
 use crate::core::models::cupon::Cupon;
+use crate::core::models::cupon::CuponWithMember;
 
 #[server(MemberCupons, "/api/emails/member")]
 pub async fn get_member_cupons(member_id: i32) -> Result<Vec<Cupon>, ServerFnError> {
@@ -30,7 +31,7 @@ pub async fn get_member_cupons(member_id: i32) -> Result<Vec<Cupon>, ServerFnErr
 }
 
 #[server(CuponsByCode, "/api/emails/member")]
-pub async fn get_cupons_by_code(cupon: String) -> Result<Vec<Cupon>, ServerFnError> {
+pub async fn get_cupons_by_code(cupon: String) -> Result<Vec<CuponWithMember>, ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
 

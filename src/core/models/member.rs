@@ -66,6 +66,11 @@ impl Member {
 
         true
     }
+
+    /// Returns the full name of the member
+    pub fn get_full_name(&self) -> String {
+        format!("{} {} {}", self.name, self.surname, self.second_surname)
+    }
 }
 
 #[cfg(feature = "ssr")]

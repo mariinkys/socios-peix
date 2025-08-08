@@ -64,13 +64,8 @@ pub fn MembersList() -> impl IntoView {
                     members_list
                         .into_iter()
                         .filter(|member_with_interests| {
-                            let full_name = format!(
-                                "{} {} {}",
-                                member_with_interests.member.name,
-                                member_with_interests.member.surname,
-                                member_with_interests.member.second_surname
-                            )
-                            .to_lowercase();
+                            let full_name =
+                                member_with_interests.member.get_full_name().to_lowercase();
 
                             let query_ok = if query.is_empty() {
                                 true
@@ -300,7 +295,7 @@ pub fn MembersList() -> impl IntoView {
                                             view! {
                                                 <tr>
                                                     <th>{m.member_id.unwrap_or_default()}</th>
-                                                    <td>{format!("{} {} {}", m.member.name, m.member.surname, m.member.second_surname)}</td>
+                                                    <td>{m.member.get_full_name()}</td>
                                                     <td>{m.member.email}</td>
                                                     <td>{m.member.birthdate.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
                                                     <td>{m.member.gender.to_string()}</td>
