@@ -58,6 +58,15 @@ CREATE TABLE IF NOT EXISTS emails (
     FOREIGN KEY (to_member_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
+-- Migration 006: Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create triggers for updated_at timestamps
 CREATE TRIGGER IF NOT EXISTS update_members_updated_at
     AFTER UPDATE ON members
@@ -78,4 +87,11 @@ CREATE TRIGGER IF NOT EXISTS update_cupons_updated_at
     FOR EACH ROW
     BEGIN
         UPDATE cupons SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_users_updated_at
+    AFTER UPDATE ON users
+    FOR EACH ROW
+    BEGIN
+        UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
