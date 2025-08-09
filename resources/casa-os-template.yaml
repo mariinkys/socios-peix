@@ -11,7 +11,7 @@ services:
     environment:
       - DATABASE_URL=sqlite:/app/db/socios.db
     labels:
-      icon: https://raw.githubusercontent.com/mariinkys/socios-peix/refs/heads/main/resources/SociosPeix.png 
+      icon: https://raw.githubusercontent.com/mariinkys/socios-peix/refs/heads/main/resources/icon.png 
     ports:
       - target: 8080
         published: "8080"
@@ -30,7 +30,7 @@ x-casaos:
   author: self
   category: self
   hostname: ""
-  icon: https://raw.githubusercontent.com/mariinkys/socios-peix/refs/heads/main/resources/SociosPeix.png 
+  icon: https://raw.githubusercontent.com/mariinkys/socios-peix/refs/heads/main/resources/icon.png 
   index: /
   port_map: "8080"
   scheme: http
