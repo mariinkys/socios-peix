@@ -21,4 +21,7 @@
     "rust-analyzer.cargo.features": [
         "ssr"
     ],
+    "rust-analyzer.cargo.extraEnv": {
+        "RUSTFLAGS": "--cfg erase_components"
+    }
 }

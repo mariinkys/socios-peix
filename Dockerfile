@@ -1,45 +1,53 @@
-# Get started with a build env with Rust nightly
-FROM rustlang/rust:nightly-alpine as builder
+FROM rustlang/rust:nightly-bookworm as builder
 
-RUN apk update && \
-    apk add --no-cache bash curl npm libc-dev binaryen openssl-dev
+RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz \
+    && tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz \
+    && cp cargo-binstall /usr/local/cargo/bin \
+    && rm cargo-binstall-x86_64-unknown-linux-musl.tgz
 
-RUN npm install -g sass
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends clang libssl-dev pkg-config npm binaryen \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN curl --proto '=https' --tlsv1.2 -LsSf https://github.com/leptos-rs/cargo-leptos/releases/latest/download/cargo-leptos-installer.sh | sh
-#RUN cargo install --locked cargo-leptos@0.2.41
+RUN cargo binstall cargo-leptos -y
 
-# Add the WASM target
 RUN rustup target add wasm32-unknown-unknown
 
-WORKDIR /work
+WORKDIR /app
 COPY . .
 
-RUN npm install
+RUN npm install -g sass \
+    && npm install
 
-RUN cargo leptos build --release -vv
+RUN RUSTFLAGS="--cfg erase_components" cargo leptos build --release -vv
 
-FROM rustlang/rust:nightly-alpine as runner
-
+FROM debian:bookworm-slim as runner
 WORKDIR /app
 
-COPY --from=builder /work/target/release/socios-peix /app/
-COPY --from=builder /work/target/site /app/site
-COPY --from=builder /work/Cargo.toml /app/
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/socios-peix /app/
+
+COPY --from=builder /app/target/site /app/site
+
+COPY --from=builder /app/Cargo.toml /app/
 
 ENV RUST_LOG="info"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
-ENV LEPTOS_SITE_ROOT=./site
+ENV LEPTOS_SITE_ROOT="./site"
 ENV DATABASE_URL="sqlite:/app/db/socios.db"
 ENV FROM_NAME="From Email Name"
 ENV SMTP_PASSWORD="SMPTPassword"
 ENV SMTP_USERNAME="myemail@gmail.com"
+
 EXPOSE 8080
 
-# Create a directory for the database
 RUN mkdir -p /app/db
-
-# Use VOLUME to mark the database directory as a mount point
 VOLUME /app/db
 
 CMD ["/app/socios-peix"]
