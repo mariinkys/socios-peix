@@ -1,7 +1,7 @@
 name: socios-peix
 services:
   socios-peix:
-    image: mariinkys/socios-peix:latest
+    image: registry.gitlab.com/mariinkys/socios-peix:latest
     container_name: socios-peix
     cpu_shares: 128  
     deploy:
@@ -10,8 +10,11 @@ services:
           memory: 1024M 
     environment:
       - DATABASE_URL=sqlite:/app/db/socios.db
+      - FROM_NAME=From Email Name
+      - SMTP_PASSWORD=SMPTPassword
+      - SMTP_USERNAME=myemail@gmail.com
     labels:
-      icon: https://raw.githubusercontent.com/mariinkys/socios-peix/refs/heads/main/resources/icon.png 
+      icon: https://i.imgur.com/PTwzO7E.png
     ports:
       - target: 8080
         published: "8080"
@@ -30,7 +33,7 @@ x-casaos:
   author: self
   category: self
   hostname: ""
-  icon: https://raw.githubusercontent.com/mariinkys/socios-peix/refs/heads/main/resources/icon.png 
+  icon: https://i.imgur.com/PTwzO7E.png
   index: /
   port_map: "8080"
   scheme: http
