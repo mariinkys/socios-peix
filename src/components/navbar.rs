@@ -23,7 +23,7 @@ pub fn NavbarComponent() -> impl IntoView {
     });
 
     Effect::new(move |_| {
-        let theme = if is_dark.get() { "dark" } else { "light" };
+        let theme = if dark_mode.get() { "dark" } else { "light" };
         if let Some(document) = web_sys::window().unwrap().document()
             && let Some(html) = document.document_element()
         {
