@@ -60,7 +60,7 @@ impl Email {
             "SELECT id, to_member_id, subject, body, created_at
              FROM emails
              WHERE to_member_id = $1
-             ORDER BY created_at DESC",
+             ORDER BY id DESC",
         )
         .bind(member_id)
         .fetch_all(pool)
@@ -85,7 +85,7 @@ impl Email {
         let rows = sqlx::query(
             "SELECT id, to_member_id, subject, body, created_at
              FROM emails
-             ORDER BY created_at DESC",
+             ORDER BY id DESC",
         )
         .fetch_all(pool)
         .await?;
@@ -256,7 +256,7 @@ impl Email {
         WHERE CAST(strftime('%d', e.created_at) AS INTEGER) = $1
             AND CAST(strftime('%m', e.created_at) AS INTEGER) = $2
             AND CAST(strftime('%Y', e.created_at) AS INTEGER) = $3
-        ORDER BY e.created_at DESC",
+        ORDER BY e.id DESC",
     )
     .bind(today_day as i32)
     .bind(today_month as i32)

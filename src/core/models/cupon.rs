@@ -38,7 +38,8 @@ impl Cupon {
     ) -> Result<Vec<Cupon>, sqlx::Error> {
         let rows = sqlx::query(
             "SELECT cupons.* FROM cupons 
-             WHERE cupons.member_id = $1",
+             WHERE cupons.member_id = $1
+             ORDER BY id DESC",
         )
         .bind(member_id)
         .fetch_all(pool)
@@ -110,7 +111,8 @@ impl Cupon {
          FROM cupons
          LEFT JOIN members ON cupons.member_id = members.id
          WHERE cupons.code = $1
-           AND (cupons.expires_at IS NULL OR DATE(cupons.expires_at) >= DATE($2))",
+           AND (cupons.expires_at IS NULL OR DATE(cupons.expires_at) >= DATE($2))
+         ORDER BY cupons.id DESC",
         )
         .bind(code)
         .bind(today)

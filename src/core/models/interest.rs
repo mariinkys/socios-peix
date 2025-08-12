@@ -123,7 +123,7 @@ impl Interest {
             created_at, 
             updated_at
         FROM interests 
-        ORDER BY id ASC",
+        ORDER BY id DESC",
         )
         .fetch_all(pool)
         .await?;

@@ -91,7 +91,7 @@ impl Member {
                 created_at, 
                 updated_at
             FROM members 
-            ORDER BY id ASC",
+            ORDER BY id DESC",
         )
         .fetch_all(pool)
         .await?;
@@ -152,7 +152,7 @@ impl Member {
                 created_at, 
                 updated_at
             FROM members 
-            ORDER BY id ASC",
+            ORDER BY id DESC",
         )
         .fetch_all(pool)
         .await?;
@@ -413,7 +413,7 @@ impl Member {
             FROM members m
             INNER JOIN member_interests mi ON m.id = mi.member_id
             WHERE mi.interest_id IN ({placeholders})
-            ORDER BY m.name ASC, m.surname ASC",
+            ORDER BY m.id DESC",
         );
         let mut query_builder = sqlx::query(&query);
         for interest_id in interest_ids {
