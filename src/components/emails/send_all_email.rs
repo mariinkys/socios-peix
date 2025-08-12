@@ -28,6 +28,7 @@ pub fn AllEmails() -> impl IntoView {
                         visible: true,
                     });
                     email_model.set(LeptosEmail::default());
+                    dialog_ref_node.get().unwrap().close();
                 }
                 Err(err) => {
                     set_toast.set(ToastMessage {

@@ -56,6 +56,7 @@ pub fn CategoryCuponEmails() -> impl IntoView {
                     });
                     current_dialog_page.set(CurrentDialogPage::default());
                     model.set(LeptosMemberCupon::default());
+                    dialog_ref_node.get().unwrap().close();
                 }
                 Err(err) => {
                     set_toast.set(ToastMessage {

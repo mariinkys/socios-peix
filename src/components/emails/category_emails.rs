@@ -56,6 +56,7 @@ pub fn CategoryEmails() -> impl IntoView {
                     });
                     current_dialog_page.set(CurrentDialogPage::default());
                     email_model.set(LeptosEmail::default());
+                    dialog_ref_node.get().unwrap().close();
                 }
                 Err(err) => {
                     set_toast.set(ToastMessage {

@@ -28,6 +28,7 @@ pub fn AllCuponEmails() -> impl IntoView {
                         visible: true,
                     });
                     model.set(LeptosMemberCupon::default());
+                    dialog_ref_node.get().unwrap().close();
                 }
                 Err(err) => {
                     set_toast.set(ToastMessage {

@@ -37,6 +37,7 @@ pub fn MemberCupons(edit_mode: RwSignal<bool>, member_id: i32) -> impl IntoView 
                     });
                     model.set(LeptosMemberCupon::default());
                     member_cupons.refetch();
+                    send_dialog_ref_node.get().unwrap().close();
                 }
                 Err(err) => {
                     set_toast.set(ToastMessage {
