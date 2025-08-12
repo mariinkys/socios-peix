@@ -149,4 +149,18 @@ impl Cupon {
 
         Ok(cupons_with_members)
     }
+
+    pub async fn update_used(
+        pool: &Pool<Sqlite>,
+        cupon_id: i32,
+        new_value: bool,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("UPDATE cupons SET used = $1 WHERE id = $2")
+            .bind(new_value)
+            .bind(cupon_id)
+            .execute(pool)
+            .await?;
+
+        Ok(())
+    }
 }

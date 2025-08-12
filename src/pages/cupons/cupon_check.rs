@@ -5,7 +5,10 @@ use crate::{
         page_loading::PageLoadingComponent,
         toast::{ToastMessage, ToastType},
     },
-    core::{api::cupons::CuponsByCode, models::cupon::CuponWithMember},
+    core::{
+        api::cupons::{CuponsByCode, SwapCuponUsed},
+        models::cupon::CuponWithMember,
+    },
 };
 
 #[component]
@@ -84,6 +87,33 @@ pub fn CuponCheckPage() -> impl IntoView {
             None
         }
     };
+
+    let swap_used_action = ServerAction::<SwapCuponUsed>::new();
+    let swap_used_value = swap_used_action.value();
+    Effect::new(move |_| {
+        if let Some(val) = swap_used_value.get() {
+            match val {
+                Ok(_) => {
+                    set_toast.set(ToastMessage {
+                        message: String::from("Cambiado"),
+                        toast_type: ToastType::Success,
+                        visible: true,
+                    });
+                    cupons_model.set(Vec::<CuponWithMember>::new());
+                    search_by_code.dispatch(CuponsByCode {
+                        cupon: cupon_input.get_untracked(),
+                    });
+                }
+                Err(err) => {
+                    set_toast.set(ToastMessage {
+                        message: format!("Error: {err}"),
+                        toast_type: ToastType::Error,
+                        visible: true,
+                    });
+                }
+            }
+        }
+    });
 
     let current_page = RwSignal::new(1usize);
     let items_per_page = RwSignal::new(20usize);
@@ -215,6 +245,7 @@ pub fn CuponCheckPage() -> impl IntoView {
                                 <th>"Enviado el Día"</th>
                                 <th>"Caduca el Día"</th>
                                 <th>"Usado"</th>
+                                <th>"Cambiar Usado"</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -228,6 +259,16 @@ pub fn CuponCheckPage() -> impl IntoView {
                                             <td>{c.cupon.created_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
                                             <td>{c.cupon.expires_at.map(|x| x.format("%d-%m-%Y").to_string()).unwrap_or_else(|| "N/A".to_string())}</td>
                                             <td>{if c.cupon.used { "Sí" } else { "No" }}</td>
+                                            <td><button class="btn btn-accent"
+                                                    on:click={ move |_| {
+                                                        if let Some(id) = c.cupon.id {
+                                                            swap_used_action.dispatch(SwapCuponUsed { cupon_id: id, current_value: c.cupon.used });
+                                                        }
+                                                    }}
+                                                >
+                                                    "Cambiar Usado"
+                                                </button>
+                                            </td>
                                         </tr>
                                     }
                                 }/>
