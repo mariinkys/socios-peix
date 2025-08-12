@@ -1,4 +1,6 @@
 use leptos::prelude::*;
+use leptos_router::hooks::use_query;
+use leptos_router::params::Params;
 
 use crate::{
     components::{
@@ -11,14 +13,30 @@ use crate::{
     },
 };
 
+#[derive(Params, PartialEq)]
+struct CuponCheckParams {
+    cupon: Option<String>,
+}
+
 #[component]
 pub fn CuponCheckPage() -> impl IntoView {
     let set_toast: WriteSignal<ToastMessage> = expect_context();
 
     let cupons_model = RwSignal::new(Vec::<CuponWithMember>::new());
+    let query = use_query::<CuponCheckParams>();
 
     let cupon_input = RwSignal::new(String::new());
     let search_input = RwSignal::new(String::new());
+    Effect::new(move |_| {
+        cupon_input.set(
+            query
+                .read()
+                .as_ref()
+                .ok()
+                .and_then(|params| params.cupon.clone())
+                .unwrap_or_default(),
+        );
+    });
 
     let search_by_code = ServerAction::<CuponsByCode>::new();
     let search_value = search_by_code.value();
