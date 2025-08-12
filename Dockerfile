@@ -10,6 +10,13 @@ RUN apt-get update -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Download latest Binaryen release from GitHub and install it
+RUN BINARYEN_VERSION=$(curl -s https://api.github.com/repos/WebAssembly/binaryen/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') \
+    && wget https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+    && tar -xzf binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz \
+    && cp -r binaryen-${BINARYEN_VERSION}/bin/* /usr/local/bin/ \
+    && rm -rf binaryen-${BINARYEN_VERSION} binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz
+
 RUN cargo binstall cargo-leptos -y
 
 RUN rustup target add wasm32-unknown-unknown
