@@ -268,7 +268,14 @@ impl User {
         Ok(())
     }
 
-    pub async fn delete(pool: &Pool<Sqlite>, id: i32) -> Result<(), sqlx::Error> {
+    pub async fn delete(pool: &Pool<Sqlite>, id: i32) -> Result<(), UserError> {
+        let all_users = Self::get_all(pool).await?;
+        if all_users.len() <= 1 {
+            return Err(UserError::OperationFailed(String::from(
+                "Can't delete the last user",
+            )));
+        }
+
         sqlx::query("DELETE FROM users WHERE id = $1")
             .bind(id)
             .execute(pool)
