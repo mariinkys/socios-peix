@@ -46,7 +46,7 @@ pub async fn get_interest(interest_id: i32) -> Result<Interest, ServerFnError> {
 }
 
 #[server(UpsertInterest, "/api/interest/upsert")]
-pub async fn upsert_memeber(interest: Interest) -> Result<(), ServerFnError> {
+pub async fn upsert_interest(interest: Interest) -> Result<(), ServerFnError> {
     let ext: Data<Pool<Sqlite>> = extract().await?;
     let pool: Arc<Pool<Sqlite>> = ext.into_inner();
 

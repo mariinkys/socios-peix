@@ -6,6 +6,7 @@ pub mod pages;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     use actix_files::Files;
+    use actix_session::{SessionMiddleware, storage::CookieSessionStore};
     use actix_web::*;
     use leptos::config::get_configuration;
     use leptos::prelude::*;
@@ -15,6 +16,10 @@ async fn main() -> std::io::Result<()> {
 
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
+
+    // Auth Secret Key
+    let secret_key_env = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
+    let secret_key = actix_web::cookie::Key::from(secret_key_env.as_bytes());
 
     // Database
     // Ej: export DATABASE_URL="sqlite:socios.db"
@@ -69,6 +74,7 @@ async fn main() -> std::io::Result<()> {
                 }
             })
             .app_data(web::Data::new(leptos_options.to_owned()))
+            .wrap(SessionMiddleware::new(CookieSessionStore::default(), secret_key.clone()))
         //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?

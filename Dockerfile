@@ -51,6 +51,8 @@ ENV DATABASE_URL="sqlite:/app/db/socios.db"
 ENV FROM_NAME="From Email Name"
 ENV SMTP_PASSWORD="SMPTPassword"
 ENV SMTP_USERNAME="myemail@gmail.com"
+# Please change the secret key don't leave the default one
+ENV SECRET_KEY="da5ff4ed8bd415a6a99a313d54de591503b762ed33a10c98b3d8d09293ed0adaabd70e9da8721e3c4b4e1a0ec842790e159e5cd14485811945030c58c5de2467"
 
 EXPOSE 8080
 

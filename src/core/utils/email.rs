@@ -53,10 +53,7 @@ pub fn get_birthday_styled(member: &Member) -> String {
             </body>
         </html>
         "#,
-        nombre = format_args!(
-            "{} {} {}",
-            member.name, member.surname, member.second_surname
-        )
+        nombre = format_args!("{}", member.name)
     )
 }
 
