@@ -241,18 +241,14 @@ impl User {
         old_password: String,
         new_password: String,
     ) -> Result<(), UserError> {
-        let old_hashed_password = crate::core::utils::passwords::encrypt_password(old_password);
-        if let Err(err) = old_hashed_password {
-            return Err(UserError::OperationFailed(err));
-        };
-
         let row = sqlx::query("SELECT password FROM users WHERE id = $1")
             .bind(user_id)
             .fetch_one(pool)
             .await?;
         let hash: String = row.try_get("password")?;
 
-        if old_hashed_password.unwrap() != hash {
+        let is_password_valid = verify_password(old_password, hash);
+        if let Err(_err) = is_password_valid {
             return Err(UserError::OperationFailed(String::from(
                 "Old password is incorrect",
             )));

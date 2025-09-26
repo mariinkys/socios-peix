@@ -12,8 +12,8 @@ use crate::{
         users::upsert::UpsertUser,
     },
     core::{
-        api::users::{DeleteUser, get_user},
-        models::user::UserUpsertModel,
+        api::users::{ChangeUserPassword, DeleteUser, get_user},
+        models::user::{UpsertOperation, UserUpsertModel},
     },
 };
 
@@ -78,6 +78,49 @@ pub fn UpsertUserPage() -> impl IntoView {
         }
     });
 
+    let change_password_dialog_ref_node: NodeRef<leptos::html::Dialog> = NodeRef::new();
+    let change_password_action = ServerAction::<ChangeUserPassword>::new();
+    let change_password_value = change_password_action.value();
+    Effect::new(move |_| {
+        if let Some(val) = change_password_value.get() {
+            match val {
+                Ok(_) => {
+                    change_password_dialog_ref_node.get().unwrap().close();
+                    set_toast.set(ToastMessage {
+                        message: String::from("Cambiada Correctamente!"),
+                        toast_type: ToastType::Success,
+                        visible: true,
+                    });
+                    user_resource.refetch();
+                }
+                Err(err) => {
+                    set_toast.set(ToastMessage {
+                        message: format!("Error: {err}"),
+                        toast_type: ToastType::Error,
+                        visible: true,
+                    });
+                }
+            }
+        }
+    });
+
+    let on_submit = move |ev: leptos::ev::SubmitEvent| {
+        // Stop the page from reloading
+        ev.prevent_default();
+        let user_model = user_model.get();
+        let operation = UpsertOperation::PasswordChange;
+
+        if user_model.is_valid(operation) {
+            change_password_action.dispatch(ChangeUserPassword { user: user_model });
+        } else {
+            set_toast.set(ToastMessage {
+                message: String::from("Faltan campos obligatorios"),
+                toast_type: ToastType::Error,
+                visible: true,
+            });
+        }
+    };
+
     view! {
         <Suspense fallback=move || view! { <PageLoadingComponent/> }>
             <ErrorBoundary fallback=|error| view! {
@@ -93,6 +136,14 @@ pub fn UpsertUserPage() -> impl IntoView {
                         on:click=move |_| edit_mode.update(|val| *val = !*val)
                     >
                         "Editar"
+                    </button>
+                    <button
+                        class="btn btn-accent"
+                        disabled=move || user_model.get().id.is_none()
+                        on:click=move |_| {
+                            let _ = change_password_dialog_ref_node.get().unwrap().show_modal();
+                    }>
+                        "Cambiar Contraseña"
                     </button>
                     <button
                         class="btn btn-error"
@@ -118,6 +169,73 @@ pub fn UpsertUserPage() -> impl IntoView {
                                 }
                         }>
                         "Delete"</button>
+                    }
+                }/>
+
+                <DialogComponent dialog_title="Cambiar Contraseña" dialog_node_ref=change_password_dialog_ref_node dialog_content=move || {
+                    view! {
+                        <form class="w-full" on:submit=on_submit>
+                            <div class="flex flex-col gap-2 w-full">
+                                //old password (if any)
+                                <div class="w-full">
+                                    <fieldset class="fieldset">
+                                        <label class="label" for="old_password">"Antigua Contraseña"</label>
+                                        <input type="password"
+                                            class="input w-full"
+                                            name="old_password"
+                                            id="old_password"
+                                            autocomplete="off"
+                                            prop:value={move || user_model.get().old_password}
+                                            on:input=move |ev| {
+                                                user_model.update(|curr| {
+                                                    curr.old_password = event_target_value(&ev);
+                                                });
+                                            }
+                                        />
+                                    </fieldset>
+                                </div>
+
+                                // new password
+                                <div class="w-full">
+                                    <fieldset class="fieldset">
+                                        <label class="label" for="new_password">"Nueva Contraseña"</label>
+                                        <input type="password"
+                                            class="input w-full"
+                                            name="new_password"
+                                            id="new_password"
+                                            autocomplete="off"
+                                            prop:value={move || user_model.get().new_password}
+                                            on:input=move |ev| {
+                                                user_model.update(|curr| {
+                                                    curr.new_password = event_target_value(&ev);
+                                                });
+                                            }
+                                        />
+                                    </fieldset>
+                                </div>
+
+                                // new password (reoeat)
+                                <div class="w-full">
+                                    <fieldset class="fieldset">
+                                        <label class="label" for="new_password_repeat">"Nueva Contraseña (Repetir)"</label>
+                                        <input type="password"
+                                            class="input w-full"
+                                            name="new_password_repeat"
+                                            id="new_password_repeat"
+                                            autocomplete="off"
+                                            prop:value={move || user_model.get().new_password_repeat}
+                                            on:input=move |ev| {
+                                                user_model.update(|curr| {
+                                                    curr.new_password_repeat = event_target_value(&ev);
+                                                });
+                                            }
+                                        />
+                                    </fieldset>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-full">"Cambiar"</button>
+                            </div>
+                        </form>
                     }
                 }/>
 
