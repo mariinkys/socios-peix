@@ -126,33 +126,35 @@ pub fn UpsertUserPage() -> impl IntoView {
             <ErrorBoundary fallback=|error| view! {
                 <p class="text-xl text-center text-red-500">"An error occurred: " {format!("{error:?}")}</p>
             }>
-                <div class="flex flex-row gap-2 mb-3 items-center">
+                <div class="flex flex-col md:flex-row md:justify-between gap-4 md:gap-2 mb-3 items-cemter">
                     <h2 class="text-2xl grow">"Detalles Usuario"</h2>
-                    <button
-                        class="btn"
-                        class:btn-accent=move || !edit_mode.get()
-                        class:btn-error=move || edit_mode.get()
-                        disabled=move || user_model.get().id.is_none()
-                        on:click=move |_| edit_mode.update(|val| *val = !*val)
-                    >
-                        "Editar"
-                    </button>
-                    <button
-                        class="btn btn-accent"
-                        disabled=move || user_model.get().id.is_none()
-                        on:click=move |_| {
-                            let _ = change_password_dialog_ref_node.get().unwrap().show_modal();
-                    }>
-                        "Cambiar Contraseña"
-                    </button>
-                    <button
-                        class="btn btn-error"
-                        disabled=move || user_model.get().id.is_none()
-                        on:click=move |_| {
-                            let _ = delete_dialog_ref_node.get().unwrap().show_modal();
-                    }>
-                        "Eliminar"
-                    </button>
+                    <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                        <button
+                            class="btn w-full md:w-auto"
+                            class:btn-accent=move || !edit_mode.get()
+                            class:btn-error=move || edit_mode.get()
+                            disabled=move || user_model.get().id.is_none()
+                            on:click=move |_| edit_mode.update(|val| *val = !*val)
+                        >
+                            "Editar"
+                        </button>
+                        <button
+                            class="btn btn-accent w-full md:w-auto"
+                            disabled=move || user_model.get().id.is_none()
+                            on:click=move |_| {
+                                let _ = change_password_dialog_ref_node.get().unwrap().show_modal();
+                        }>
+                            "Cambiar Contraseña"
+                        </button>
+                        <button
+                            class="btn btn-error w-full md:w-auto"
+                            disabled=move || user_model.get().id.is_none()
+                            on:click=move |_| {
+                                let _ = delete_dialog_ref_node.get().unwrap().show_modal();
+                        }>
+                            "Eliminar"
+                        </button>
+                    </div>
                 </div>
 
                 <DialogComponent dialog_title="Eliminar Usuario" dialog_node_ref=delete_dialog_ref_node dialog_content=move || {

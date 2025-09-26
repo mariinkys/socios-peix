@@ -47,18 +47,18 @@ pub fn LoginPage() -> impl IntoView {
                 <p class="text-xl text-center text-red-500">"An error occurred: " {format!("{error:?}")}</p>
             }>
                 <div class="min-h-[95vh] w-full flex items-center justify-center">
-                    <div class="card card-border bg-base-200 w-1/2 m-auto rounded-xl">
+                    <div class="card card-border bg-base-200 w-full xl:w-1/2 m-auto rounded-xl">
                         <div class="card-body">
                             <ActionForm action=login_action>
                                 <div class="flex gap-4 items-center">
-                                    <div>
+                                    <div class="hidden xl:block">
                                         <img src="/assets/main.webp"
                                             alt="Hotel Photo"
                                             class="object-cover rounded-xl shadow-md"
                                             loading="lazy"/>
                                     </div>
                                     <div class="flex flex-col gap-2 w-full">
-                                        <p class="m-auto text-3xl font-bold">"Inicio de Sesión"</p>
+                                        <p class="m-auto text-3xl font-bold text-center">"Inicio de Sesión"</p>
                                         <div class="w-full">
                                             <fieldset class="fieldset">
                                                 <label class="label" for="username">"Nombre de Usuario"</label>
