@@ -2,48 +2,8 @@
 
 use leptos::prelude::*;
 
-#[cfg(target_arch = "wasm32")]
-use leptos::web_sys::window;
-
 #[component]
-pub fn NavbarComponent() -> impl IntoView {
-    let dark_mode = RwSignal::new(false);
-
-    Effect::new(move |_| {
-        #[cfg(target_arch = "wasm32")]
-        #[allow(clippy::collapsible_if)]
-        if let Some(stored_theme) = get_stored_theme() {
-            dark_mode.set(stored_theme);
-        } else {
-            if let Some(win) = window() {
-                if let Ok(media_query) = win.match_media("(prefers-color-scheme: dark)") {
-                    #[allow(clippy::collapsible_match)]
-                    if let Some(mq) = media_query {
-                        dark_mode.set(mq.matches());
-                    }
-                }
-            }
-        };
-    });
-
-    Effect::new(move |_| {
-        #[cfg(target_arch = "wasm32")]
-        let theme = if dark_mode.get() { "dark" } else { "light" };
-
-        #[cfg(target_arch = "wasm32")]
-        {
-            // apply theme
-            if let Some(document) = web_sys::window().unwrap().document()
-                && let Some(html) = document.document_element()
-            {
-                html.set_attribute("data-theme", theme).unwrap();
-            }
-
-            // save to localStorage
-            save_theme_preference(dark_mode.get());
-        }
-    });
-
+pub fn NavbarComponent(dark_mode: RwSignal<bool>) -> impl IntoView {
     view! {
         <div class="navbar bg-base-100 shadow-sm">
             <div class="navbar-start">
@@ -75,32 +35,6 @@ pub fn NavbarComponent() -> impl IntoView {
                     <svg class="swap-off fill-current w-10 h-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"/></svg>
                 </label>
             </div>
-            </div>
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-fn get_local_storage() -> Option<web_sys::Storage> {
-    window()?.local_storage().ok().flatten()
-}
-
-// Get stored theme preference
-#[cfg(target_arch = "wasm32")]
-fn get_stored_theme() -> Option<bool> {
-    let storage = get_local_storage()?;
-    let theme = storage.get_item("theme").ok().flatten()?;
-    match theme.as_str() {
-        "dark" => Some(true),
-        "light" => Some(false),
-        _ => None,
-    }
-}
-
-// Save theme preference
-#[cfg(target_arch = "wasm32")]
-fn save_theme_preference(is_dark: bool) {
-    if let Some(storage) = get_local_storage() {
-        let theme = if is_dark { "dark" } else { "light" };
-        let _ = storage.set_item("theme", theme);
+        </div>
     }
 }

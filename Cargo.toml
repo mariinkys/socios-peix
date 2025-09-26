@@ -33,6 +33,10 @@ rust_xlsxwriter = { version = "0.90.1", optional = true }
 base64 = { version = "0.22.1", optional = true }
 lettre = { version = "0.11.18", optional = true }
 rand = { version = "0.9.2", optional = true }
+actix-session = { version = "0.11.0", features = [
+  "cookie-session",
+], optional = true }
+argon2 = { version = "0.5.3", optional = true }
 
 [dependencies.web-sys]
 version = "0.3.80"
@@ -56,6 +60,8 @@ ssr = [
   "dep:base64",
   "dep:lettre",
   "dep:rand",
+  "dep:actix-session",
+  "dep:argon2",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode
