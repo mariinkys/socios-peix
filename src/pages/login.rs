@@ -54,7 +54,8 @@ pub fn LoginPage() -> impl IntoView {
                                     <div>
                                         <img src="/assets/main.webp"
                                             alt="Hotel Photo"
-                                            class="object-cover rounded-xl shadow-md" />
+                                            class="object-cover rounded-xl shadow-md"
+                                            loading="lazy"/>
                                     </div>
                                     <div class="flex flex-col gap-2 w-full">
                                         <p class="m-auto text-3xl font-bold">"Inicio de Sesión"</p>
