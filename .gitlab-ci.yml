@@ -1,0 +1,54 @@
+# GitLab CI/CD Pipeline for Docker Image Build and Push
+# This pipeline builds and pushes a Docker image to GitLab Container Registry
+# when changes are made to the main branch
+
+variables:
+  # Use the official Docker image with Docker-in-Docker (DinD) service
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  # Image name - will be pushed to GitLab Container Registry
+  IMAGE_NAME: $CI_REGISTRY_IMAGE:latest
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+stages:
+  - build
+  - push
+
+# Build stage - builds the Docker image
+build-image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    # Log in to GitLab Container Registry
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    # Build the Docker image
+    - docker build -t $IMAGE_NAME -t $IMAGE_TAG .
+    # Show built images for verification
+    - docker images
+  only:
+    - main
+  artifacts:
+
+# Push stage - pushes the built image to GitLab Container Registry
+push-image:
+  stage: push
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    # Log in to GitLab Container Registry
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    # Rebuild image (since artifacts don't persist Docker images between stages)
+    - docker build -t $IMAGE_NAME -t $IMAGE_TAG .
+    # Push both latest and commit-specific tags
+    - docker push $IMAGE_NAME
+    - docker push $IMAGE_TAG
+    - echo "Successfully pushed image to $CI_REGISTRY_IMAGE"
+  only:
+    - main
+  dependencies:
+    - build-image
