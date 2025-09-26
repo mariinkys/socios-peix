@@ -4,3 +4,4 @@ pub mod interests;
 pub mod login;
 pub mod management;
 pub mod members;
+pub mod users;

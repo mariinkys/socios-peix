@@ -16,6 +16,7 @@ use crate::{
         login::LoginPage,
         management::ManagementPage,
         members::{list::MembersPage, upsert::UpsertMemberPage},
+        users::{list::UsersPage, upsert::UpsertUserPage},
     },
 };
 
@@ -158,6 +159,26 @@ pub fn App() -> impl IntoView {
                                 fallback=move || view! { <Redirect path="/login" /> }
                             >
                                 <ManagementPage/>
+                            </Show>
+                        </Transition>
+                    }/>
+                    <Route path=path!("/users") view=move || view! {
+                        <Transition>
+                            <Show
+                                when=move || is_logged_in(user_data.get())
+                                fallback=move || view! { <Redirect path="/login" /> }
+                            >
+                                <UsersPage/>
+                            </Show>
+                        </Transition>
+                    }/>
+                    <Route path=path!("/users/:id") view=move || view! {
+                        <Transition>
+                            <Show
+                                when=move || is_logged_in(user_data.get())
+                                fallback=move || view! { <Redirect path="/login" /> }
+                            >
+                                <UpsertUserPage/>
                             </Show>
                         </Transition>
                     }/>

@@ -13,7 +13,7 @@ use sqlx::{Pool, Sqlite};
 #[cfg(feature = "ssr")]
 use std::sync::Arc;
 
-use crate::core::models::user::User;
+use crate::core::models::user::{User, UserUpsertModel};
 
 #[server(GetSessionUser)]
 pub async fn get_user_from_session() -> Result<Option<User>, ServerFnError> {
@@ -71,5 +71,91 @@ pub async fn logout() -> Result<(), ServerFnError> {
         return Ok(());
     } else {
         return Err(ServerFnError::new("Failed to retrieve session"));
+    }
+}
+
+#[server(AllUsers, "/api/users")]
+pub async fn get_all_users() -> Result<Vec<User>, ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = User::get_all(&pool).await;
+
+    match result {
+        Ok(users) => Ok(users),
+        Err(e) => {
+            leptos::logging::log!("Failed to get all users: {}", e);
+            Err(ServerFnError::new("Failed to retrieve all users"))
+        }
+    }
+}
+
+#[server(UpsertUser, "/api/user/upsert")]
+pub async fn upsert_user(user: UserUpsertModel) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = match user.id {
+        Some(_) => User::edit(&pool, user).await,
+        None => User::add(&pool, user).await,
+    };
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to upsert user: {}", e);
+            Err(ServerFnError::new(format!("Failed to upsert user: {}", e)))
+        }
+    }
+}
+
+#[server(ChangeUserPassword, "/api/user/changepassword")]
+pub async fn change_user_password(user: UserUpsertModel) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = User::change_password(&pool, user.id, user.old_password, user.new_password).await;
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to change user password: {}", e);
+            Err(ServerFnError::new(format!(
+                "Failed to change user password: {}",
+                e
+            )))
+        }
+    }
+}
+
+#[server(DeleteUser, "/api/user/delete")]
+pub async fn delete_user(user_id: i32) -> Result<(), ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = User::delete(&pool, user_id).await;
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            leptos::logging::log!("Failed to delete user: {}", e);
+            Err(ServerFnError::new("Failed to delete user"))
+        }
+    }
+}
+
+#[server(SingleUser, "/api/user")]
+pub async fn get_user(user_id: i32) -> Result<UserUpsertModel, ServerFnError> {
+    let ext: Data<Pool<Sqlite>> = extract().await?;
+    let pool: Arc<Pool<Sqlite>> = ext.into_inner();
+
+    let result = User::get_single(&pool, user_id).await;
+
+    match result {
+        Ok(user) => Ok(user),
+        Err(e) => {
+            leptos::logging::log!("Failed to get single user: {}", e);
+            Err(ServerFnError::new("Failed to retrieve single user"))
+        }
     }
 }
