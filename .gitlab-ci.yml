@@ -1,22 +1,18 @@
 # GitLab CI/CD Pipeline for Docker Image Build and Push
 # This pipeline builds and pushes a Docker image to GitLab Container Registry
-# when changes are made to the main branch
+# when changes are made to the main branch OR when a release is created
 
 variables:
   # Use the official Docker image with Docker-in-Docker (DinD) service
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
-  # Image name - will be pushed to GitLab Container Registry
-  IMAGE_NAME: $CI_REGISTRY_IMAGE:latest
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
 stages:
-  - build
-  - push
+  - build-and-push
 
-# Build stage - builds the Docker image
-build-image:
-  stage: build
+# Single job that builds once and pushes appropriate tags
+build-and-push-image:
+  stage: build-and-push
   image: docker:latest
   services:
     - docker:dind
@@ -24,31 +20,31 @@ build-image:
     # Log in to GitLab Container Registry
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
-    # Build the Docker image
-    - docker build -t $IMAGE_NAME -t $IMAGE_TAG .
-    # Show built images for verification
-    - docker images
-  only:
-    - main
-  artifacts:
-
-# Push stage - pushes the built image to GitLab Container Registry
-push-image:
-  stage: push
-  image: docker:latest
-  services:
-    - docker:dind
-  before_script:
-    # Log in to GitLab Container Registry
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-  script:
-    # Rebuild image (since artifacts don't persist Docker images between stages)
-    - docker build -t $IMAGE_NAME -t $IMAGE_TAG .
-    # Push both latest and commit-specific tags
-    - docker push $IMAGE_NAME
-    - docker push $IMAGE_TAG
-    - echo "Successfully pushed image to $CI_REGISTRY_IMAGE"
-  only:
-    - main
-  dependencies:
-    - build-image
+    # Build the Docker image once
+    - docker build -t temp-image .
+    
+    # Tag and push based on trigger type
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        # This is a release - tag with release name and push
+        echo "Building for release: $CI_COMMIT_TAG"
+        docker tag temp-image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+        docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+        echo "Successfully pushed release image: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+      else
+        # This is a main branch push - tag with latest and commit SHA
+        echo "Building for main branch"
+        docker tag temp-image $CI_REGISTRY_IMAGE:latest
+        docker tag temp-image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+        docker push $CI_REGISTRY_IMAGE:latest
+        docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+        echo "Successfully pushed latest and commit-specific images"
+      fi
+    
+    # Show what was pushed
+    - docker images | grep $CI_REGISTRY_IMAGE || echo "Images pushed successfully"
+  rules:
+    # Run on main branch pushes
+    - if: $CI_COMMIT_BRANCH == "main"
+    # Run on release/tag creation
+    - if: $CI_COMMIT_TAG
