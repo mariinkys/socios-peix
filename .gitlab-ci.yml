@@ -35,10 +35,10 @@ build-and-push-image:
         # This is a main branch push - tag with latest and commit SHA
         echo "Building for main branch"
         docker tag temp-image $CI_REGISTRY_IMAGE:latest
-        docker tag temp-image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+        # docker tag temp-image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA (Don't push one with the commit SHA)
         docker push $CI_REGISTRY_IMAGE:latest
-        docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-        echo "Successfully pushed latest and commit-specific images"
+        # docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA (Don't push one with the commit SHA)
+        echo "Successfully pushed latest image"
       fi
     
     # Show what was pushed
