@@ -1,6 +1,6 @@
 [package]
 name = "socios-peix"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 
 [lib]
@@ -29,7 +29,7 @@ chrono = { version = "0.4.42", features = ["serde"] }
 futures = { version = "0.3", optional = true }
 wasm-bindgen-futures = "0.4.53"
 anyhow = "1.0.100"
-rust_xlsxwriter = { version = "0.90.1", optional = true }
+rust_xlsxwriter = { version = "0.90.2", optional = true }
 base64 = { version = "0.22.1", optional = true }
 lettre = { version = "0.11.18", optional = true }
 rand = { version = "0.9.2", optional = true }
