@@ -56,12 +56,9 @@ mirror-to-github:
   variables:
     GIT_DEPTH: 0
   script:
-    - echo "Current branch:" && git branch -a
-    - echo "All refs:" && git show-ref
     - git remote add github https://${GH_TOKEN}@github.com/mariinkys/socios-peix.git
-    - echo "Pushing all branches..."
+    - git checkout -b main origin/main
     - git push github --all --verbose
-    - echo "Pushing all tags..."
     - git push github --tags --verbose
   rules:
     # Run on main branch pushes
