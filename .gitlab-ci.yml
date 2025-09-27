@@ -51,8 +51,8 @@ build-and-push-image:
     - if: $CI_COMMIT_TAG
 
 # Mirror the repo to github
-mirror_to_github:
-  stage: mirror
+mirror-to-github:
+  stage: mirror-to-github
   variables:
     GIT_DEPTH: 0
   script:
