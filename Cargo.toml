@@ -7,15 +7,15 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-actix-files = { version = "0.6.9", optional = true }
-actix-web = { version = "4.12.1", optional = true, features = ["macros"] }
+actix-files = { version = "0.6.10", optional = true }
+actix-web = { version = "4.13.0", optional = true, features = ["macros"] }
 console_error_panic_hook = "0.1"
 http = { version = "1.4.0", optional = true }
-leptos = { version = "0.8.15", features = ["nightly"] }
-leptos_meta = { version = "0.8.5" }
-leptos_actix = { version = "0.8.6", optional = true }
-leptos_router = { version = "0.8.11", features = ["nightly"] }
-wasm-bindgen = "=0.2.106"
+leptos = { version = "0.8.19", features = ["nightly"] }
+leptos_meta = { version = "0.8.6" }
+leptos_actix = { version = "0.8.7", optional = true }
+leptos_router = { version = "0.8.13", features = ["nightly"] }
+wasm-bindgen = "=0.2.120"
 
 # Added by me
 sqlx = { version = "0.8.6", features = [
@@ -25,21 +25,21 @@ sqlx = { version = "0.8.6", features = [
   "uuid",
 ], optional = true }
 serde = { version = "1.0.228" }
-chrono = { version = "0.4.42", features = ["serde"] }
-futures = { version = "0.3", optional = true }
-wasm-bindgen-futures = "0.4.56"
-anyhow = "1.0.100"
-rust_xlsxwriter = { version = "0.92.2", optional = true }
+chrono = { version = "0.4.44", features = ["serde"] }
+futures = { version = "0.3.32", optional = true }
+wasm-bindgen-futures = "0.4.70"
+anyhow = "1.0.102"
+rust_xlsxwriter = { version = "0.94.0", optional = true }
 base64 = { version = "0.22.1", optional = true }
-lettre = { version = "0.11.19", optional = true }
-rand = { version = "0.9.2", optional = true }
+lettre = { version = "0.11.21", optional = true }
+rand = { version = "0.10.1", optional = true }
 actix-session = { version = "0.11.0", features = [
   "cookie-session",
 ], optional = true }
 argon2 = { version = "0.5.3", optional = true }
 
 [dependencies.web-sys]
-version = "0.3.83"
+version = "0.3.97"
 features = ["Window", "MediaQueryList", "Storage"]
 
 [features]
